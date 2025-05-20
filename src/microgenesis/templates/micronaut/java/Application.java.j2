@@ -1,0 +1,25 @@
+package {{ base_package }};
+
+import io.micronaut.runtime.Micronaut;
+{% if 'swagger' in features %}
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
+{% endif %}
+
+/**
+ * Main application class for {{ project_name }}
+ */
+{% if 'swagger' in features %}
+@OpenAPIDefinition(
+    info = @Info(
+        title = "{{ project_name }}",
+        version = "1.0"
+    )
+)
+{% endif %}
+public class {{ application_name }} {
+
+    public static void main(String[] args) {
+        Micronaut.run({{ application_name }}.class, args);
+    }
+}

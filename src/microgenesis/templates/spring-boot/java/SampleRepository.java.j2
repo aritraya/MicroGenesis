@@ -1,0 +1,13 @@
+package {{ base_package }}.repository;
+
+import {{ base_package }}.model.SampleEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+/**
+ * Repository for SampleEntity
+ */
+@Repository
+public interface SampleRepository extends JpaRepository<SampleEntity, Long> {
+    // You can add custom query methods here
+}

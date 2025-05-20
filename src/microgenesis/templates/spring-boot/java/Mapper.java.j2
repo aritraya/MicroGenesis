@@ -1,0 +1,104 @@
+package {{ base_package }}.mapper;
+
+import {{ base_package }}.model.{{ entity_name }};
+import {{ base_package }}.dto.{{ dto_name }};
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Mapper for converting between {{ entity_name }} entities and {{ dto_name }} DTOs
+ */
+@Component
+public class {{ mapper_name }} {
+
+    /**
+     * Convert entity to DTO
+     *
+     * @param entity the entity to convert
+     * @return the DTO representation
+     */
+    public {{ dto_name }} toDto({{ entity_name }} entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        {{ dto_name }} dto = new {{ dto_name }}();
+        
+        {% for property in entity.properties %}
+        {% if property.name in dto.properties|map(attribute='name') %}
+        dto.set{{ property.name|capitalize }}(entity.get{{ property.name|capitalize }}());
+        {% endif %}
+        {% endfor %}
+        
+        return dto;
+    }
+
+    /**
+     * Convert DTO to entity
+     *
+     * @param dto the DTO to convert
+     * @return the entity representation
+     */
+    public {{ entity_name }} toEntity({{ dto_name }} dto) {
+        if (dto == null) {
+            return null;
+        }
+
+        {{ entity_name }} entity = new {{ entity_name }}();
+        
+        {% for property in dto.properties %}
+        {% if property.name in entity.properties|map(attribute='name') %}
+        entity.set{{ property.name|capitalize }}(dto.get{{ property.name|capitalize }}());
+        {% endif %}
+        {% endfor %}
+        
+        return entity;
+    }
+
+    /**
+     * Update an existing entity from a DTO
+     *
+     * @param entity the entity to update
+     * @param dto the DTO with updated values
+     * @return the updated entity
+     */
+    public {{ entity_name }} updateEntityFromDto({{ entity_name }} entity, {{ dto_name }} dto) {
+        if (entity == null || dto == null) {
+            return entity;
+        }
+        
+        {% for property in dto.properties %}
+        {% if property.name != "id" and property.name in entity.properties|map(attribute='name') %}
+        entity.set{{ property.name|capitalize }}(dto.get{{ property.name|capitalize }}());
+        {% endif %}
+        {% endfor %}
+        
+        return entity;
+    }
+
+    /**
+     * Convert a list of entities to DTOs
+     *
+     * @param entities the entities to convert
+     * @return a list of DTOs
+     */
+    public List<{{ dto_name }}> toDtoList(List<{{ entity_name }}> entities) {
+        return entities.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Convert a list of DTOs to entities
+     *
+     * @param dtos the DTOs to convert
+     * @return a list of entities
+     */
+    public List<{{ entity_name }}> toEntityList(List<{{ dto_name }}> dtos) {
+        return dtos.stream()
+                .map(this::toEntity)
+                .collect(Collectors.toList());
+    }
+}

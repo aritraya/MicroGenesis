@@ -1,0 +1,47 @@
+# {{ project_name }} application configuration
+micronaut:
+  application:
+    name: {{ project_name }}
+  server:
+    port: 8080
+    
+{% if database.name %}
+# Database settings
+datasources:
+  default:
+{%- if database.name == 'mysql' %}
+    url: jdbc:mysql://localhost:3306/{{ project_name | lower }}
+    username: root
+    password: password
+    driverClassName: com.mysql.cj.jdbc.Driver
+{%- elif database.name == 'postgresql' %}
+    url: jdbc:postgresql://localhost:5432/{{ project_name | lower }}
+    username: postgres
+    password: password
+    driverClassName: org.postgresql.Driver
+{%- elif database.name == 'h2' %}
+    url: jdbc:h2:mem:{{ project_name | lower }};DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+    driverClassName: org.h2.Driver
+{%- endif %}
+
+# JPA settings
+jpa:
+  default:
+    entity-scan:
+      packages: {{ base_package }}.domain
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: update
+        show_sql: true
+{% endif %}
+
+{%- if 'logging' in features %}
+# Logging
+logger:
+  levels:
+    {{ base_package }}: DEBUG
+    io.micronaut: INFO
+{% endif %}

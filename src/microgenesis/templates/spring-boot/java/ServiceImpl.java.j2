@@ -1,0 +1,195 @@
+package {{ base_package }}.service.impl;
+
+import {{ base_package }}.service.{{ service_name }};
+{% for model_name, model_info in api_info.models.items() %}
+{% if model_info.type == "dto" %}
+import {{ base_package }}.dto.{{ model_name }};
+{% endif %}
+{% if model_info.type == "entity" %}
+import {{ base_package }}.model.{{ model_name }};
+import {{ base_package }}.repository.{{ model_name }}Repository;
+{% endif %}
+{% endfor %}
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+
+/**
+ * Implementation of the {{ service_name }} interface
+ */
+@Service
+@RequiredArgsConstructor
+public class {{ impl_name }} implements {{ service_name }} {
+
+    {% for model_name, model_info in api_info.models.items() %}
+    {% if model_info.type == "entity" %}
+    private final {{ model_name }}Repository {{ model_name|lower }}Repository;
+    {% endif %}
+    {% endfor %}
+    
+{% for endpoint in endpoints %}
+    @Override
+    {% if endpoint.method == "get" %}
+    @Transactional(readOnly = true)
+    {% else %}
+    @Transactional
+    {% endif %}
+    public {% if endpoint.method == "get" and "List" in endpoint.responses[200].description %}List<?>{% elif endpoint.method == "delete" %}void{% else %}Object{% endif %} {{ endpoint.operation_id }}(
+        {% if endpoint.method == "post" %}
+        {% for content_type, content in endpoint.request_body.content.items() %}{{ content.schema.ref|split("/")|last }}{% endfor %} request
+        {% elif endpoint.method == "put" %}
+        {% for param in endpoint.parameters %}
+        {% if param.in == "path" %}
+        {{ param.schema.type|default("String") }} {{ param.name }},
+        {% endif %}
+        {% endfor %}
+        {% for content_type, content in endpoint.request_body.content.items() %}{{ content.schema.ref|split("/")|last }}{% endfor %} request
+        {% else %}
+        {% for param in endpoint.parameters %}
+        {% if param.in == "path" or param.in == "query" %}
+        {{ param.schema.type|default("String") }} {{ param.name }}{% if not loop.last %},{% endif %}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+    ) {
+        {% if service_type == "domain-driven" %}
+        // Domain-driven implementation
+        {% if endpoint.method == "get" and endpoint.path.endsWith("}") %}
+        // Get specific entity by ID logic
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        return {{ model_name|lower }}Repository.findById({{ endpoint.parameters[0].name }})
+                .map(this::convertTo{{ model_name }}DTO)
+                .orElseThrow(() -> new EntityNotFoundException("{{ model_name }} not found with id: " + {{ endpoint.parameters[0].name }}));
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "get" %}
+        // Get all entities logic
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        return {{ model_name|lower }}Repository.findAll().stream()
+                .map(this::convertTo{{ model_name }}DTO)
+                .collect(Collectors.toList());
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "post" %}
+        // Create new entity logic
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        {{ model_name }} entity = convertTo{{ model_name }}Entity(request);
+        entity = {{ model_name|lower }}Repository.save(entity);
+        return convertTo{{ model_name }}DTO(entity);
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "put" %}
+        // Update existing entity logic
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        {{ model_name }} entity = {{ model_name|lower }}Repository.findById({{ endpoint.parameters[0].name }})
+                .orElseThrow(() -> new EntityNotFoundException("{{ model_name }} not found with id: " + {{ endpoint.parameters[0].name }}));
+        
+        updateEntityFromDTO(entity, request);
+        entity = {{ model_name|lower }}Repository.save(entity);
+        return convertTo{{ model_name }}DTO(entity);
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "delete" %}
+        // Delete entity logic
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        if (!{{ model_name|lower }}Repository.existsById({{ endpoint.parameters[0].name }})) {
+            throw new EntityNotFoundException("{{ model_name }} not found with id: " + {{ endpoint.parameters[0].name }});
+        }
+        {{ model_name|lower }}Repository.deleteById({{ endpoint.parameters[0].name }});
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% else %}
+        // Entity-driven implementation
+        {% if endpoint.method == "get" and endpoint.path.endsWith("}") %}
+        // Direct repository access
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        return {{ model_name|lower }}Repository.findById({{ endpoint.parameters[0].name }})
+                .orElseThrow(() -> new EntityNotFoundException("{{ model_name }} not found with id: " + {{ endpoint.parameters[0].name }}));
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "get" %}
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        return {{ model_name|lower }}Repository.findAll();
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "post" %}
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        return {{ model_name|lower }}Repository.save(request);
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "put" %}
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        if (!{{ model_name|lower }}Repository.existsById({{ endpoint.parameters[0].name }})) {
+            throw new EntityNotFoundException("{{ model_name }} not found with id: " + {{ endpoint.parameters[0].name }});
+        }
+        request.setId({{ endpoint.parameters[0].name }});
+        return {{ model_name|lower }}Repository.save(request);
+        {% endif %}
+        {% endfor %}
+        {% elif endpoint.method == "delete" %}
+        {% for model_name, model_info in api_info.models.items() %}
+        {% if model_info.type == "entity" and model_name|lower in endpoint.path|lower %}
+        if (!{{ model_name|lower }}Repository.existsById({{ endpoint.parameters[0].name }})) {
+            throw new EntityNotFoundException("{{ model_name }} not found with id: " + {{ endpoint.parameters[0].name }});
+        }
+        {{ model_name|lower }}Repository.deleteById({{ endpoint.parameters[0].name }});
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endif %}
+        
+        {% if endpoint.method != "delete" and not (endpoint.method in ["get", "post", "put"] and loop.index0 < api_info.models|length) %}
+        // TODO: Implement {{ endpoint.operation_id }} method
+        throw new UnsupportedOperationException("Method {{ endpoint.operation_id }} not implemented yet");
+        {% endif %}
+        
+        {% if endpoint.method == "delete" %}
+        // No return value for delete operations
+        {% endif %}
+    }
+    
+{% endfor %}
+
+    // Helper methods for conversion between entities and DTOs
+{% for model_name, model_info in api_info.models.items() %}
+{% if model_info.type == "entity" %}
+    /**
+     * Convert {{ model_name }} entity to DTO
+     */
+    private Object convertTo{{ model_name }}DTO({{ model_name }} entity) {
+        // TODO: Implement conversion from {{ model_name }} entity to appropriate DTO
+        return entity;
+    }
+    
+    /**
+     * Convert DTO to {{ model_name }} entity
+     */
+    private {{ model_name }} convertTo{{ model_name }}Entity(Object dto) {
+        // TODO: Implement conversion from DTO to {{ model_name }} entity
+        return new {{ model_name }}();
+    }
+    
+    /**
+     * Update {{ model_name }} entity from DTO
+     */
+    private void updateEntityFromDTO({{ model_name }} entity, Object dto) {
+        // TODO: Implement update of {{ model_name }} entity from DTO
+    }
+{% endif %}
+{% endfor %}
+}

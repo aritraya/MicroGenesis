@@ -1,0 +1,55 @@
+package {{ base_package }}.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+{% if dto.properties|selectattr("type", "equalto", "date-time")|list|length > 0 %}
+import java.time.LocalDateTime;
+{% endif %}
+{% if dto.properties|selectattr("type", "equalto", "date")|list|length > 0 %}
+import java.time.LocalDate;
+{% endif %}
+{% if dto.properties|selectattr("type", "equalto", "array")|list|length > 0 %}
+import java.util.List;
+{% endif %}
+{% if dto.properties|selectattr("format", "equalto", "byte")|list|length > 0 %}
+import java.util.Base64;
+{% endif %}
+
+/**
+ * DTO for {{ dto.name }}
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class {{ dto.name }} {
+{% for property in dto.properties %}
+    {% if property.type == "string" %}
+    {% if property.format == "date-time" %}
+    private LocalDateTime {{ property.name }};
+    {% elif property.format == "date" %}
+    private LocalDate {{ property.name }};
+    {% elif property.format == "byte" %}
+    private byte[] {{ property.name }};
+    {% else %}
+    private String {{ property.name }};
+    {% endif %}
+    {% elif property.type == "integer" %}
+    private Integer {{ property.name }};
+    {% elif property.type == "number" %}
+    private Double {{ property.name }};
+    {% elif property.type == "boolean" %}
+    private Boolean {{ property.name }};
+    {% elif property.type == "array" %}
+    private List<{{ property.items.type|capitalize }}> {{ property.name }};
+    {% elif property.type == "object" %}
+    private {{ property.ref|split("/")|last }} {{ property.name }};
+    {% else %}
+    // Complex type {{ property.type }} not directly mapped
+    private Object {{ property.name }};
+    {% endif %}
+{% endfor %}
+}

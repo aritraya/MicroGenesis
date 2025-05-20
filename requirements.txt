@@ -1,3 +1,4 @@
 # Project dependencies
-# Add your project dependencies here, for example:
-# requests>=2.25.0
+jinja2>=3.0.0
+pyyaml>=6.0
+jsonschema>=4.0.0
