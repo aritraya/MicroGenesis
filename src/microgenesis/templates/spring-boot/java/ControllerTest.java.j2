@@ -1,0 +1,117 @@
+package {{ base_package }}.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import static org.mockito.Mockito.*;
+
+import java.util.Arrays;
+import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import {{ base_package }}.dto.{{ entityName }}DTO;
+import {{ base_package }}.service.{{ entityName }}Service;
+import javax.persistence.EntityNotFoundException;
+
+/**
+ * Controller tests for {{ entityName }}Controller.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+public class {{ entityName }}ControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @MockBean
+    private {{ entityName }}Service service;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+    
+    private {{ entityName }}DTO test{{ entityName }}DTO;
+    
+    @BeforeEach
+    public void setup() {
+        test{{ entityName }}DTO = new {{ entityName }}DTO();
+        test{{ entityName }}DTO.setId(1L);
+        test{{ entityName }}DTO.setName("Test {{ entityName }}");
+        test{{ entityName }}DTO.setDescription("Test Description");
+        
+        when(service.findById(1L)).thenReturn(test{{ entityName }}DTO);
+        when(service.findAll()).thenReturn(Arrays.asList(test{{ entityName }}DTO));
+        when(service.create(any({{ entityName }}DTO.class))).thenReturn(test{{ entityName }}DTO);
+        when(service.update(eq(1L), any({{ entityName }}DTO.class))).thenReturn(test{{ entityName }}DTO);
+    }
+    
+    @Test
+    public void testGetAll() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/{{ entityName | lower }}s")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].name").value("Test {{ entityName }}"));
+        
+        verify(service, times(1)).findAll();
+    }
+    
+    @Test
+    public void testGetById() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/{{ entityName | lower }}s/1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Test {{ entityName }}"));
+        
+        verify(service, times(1)).findById(1L);
+    }
+    
+    @Test
+    public void testCreate() throws Exception {
+        {{ entityName }}DTO newDTO = new {{ entityName }}DTO();
+        newDTO.setName("New {{ entityName }}");
+        newDTO.setDescription("New Description");
+        
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/{{ entityName | lower }}s")
+                .content(objectMapper.writeValueAsString(newDTO))
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Test {{ entityName }}"));
+        
+        verify(service, times(1)).create(any({{ entityName }}DTO.class));
+    }
+    
+    @Test
+    public void testUpdate() throws Exception {
+        {{ entityName }}DTO updateDTO = new {{ entityName }}DTO();
+        updateDTO.setName("Updated {{ entityName }}");
+        updateDTO.setDescription("Updated Description");
+        
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/{{ entityName | lower }}s/1")
+                .content(objectMapper.writeValueAsString(updateDTO))
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Test {{ entityName }}"));
+        
+        verify(service, times(1)).update(eq(1L), any({{ entityName }}DTO.class));
+    }
+    
+    @Test
+    public void testDelete() throws Exception {
+        doNothing().when(service).delete(1L);
+        
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/{{ entityName | lower }}s/1"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+        
+        verify(service, times(1)).delete(1L);
+    }
+}

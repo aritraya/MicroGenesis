@@ -1,0 +1,144 @@
+package {{ base_package }}.service
+
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.ActiveProfiles
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.BeforeEach
+import org.assertj.core.api.Assertions.assertThat
+import org.mockito.Mockito.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.times
+
+import java.util.Optional
+import java.util.Arrays
+
+import {{ base_package }}.model.{{ entityName }}
+import {{ base_package }}.repository.{{ entityName }}Repository
+import {{ base_package }}.dto.{{ entityName }}DTO
+import {{ base_package }}.mapper.{{ entityName }}Mapper
+import javax.persistence.EntityNotFoundException
+
+/**
+ * Service tests for {{ entityName }}Service.
+ */
+@SpringBootTest
+@ActiveProfiles("test")
+class {{ entityName }}ServiceTest {
+
+    @Autowired
+    private lateinit var service: {{ entityName }}Service
+    
+    @MockBean
+    private lateinit var repository: {{ entityName }}Repository
+    
+    @Autowired
+    private lateinit var mapper: {{ entityName }}Mapper
+    
+    private lateinit var test{{ entityName }}: {{ entityName }}
+    private lateinit var test{{ entityName }}DTO: {{ entityName }}DTO
+    
+    @BeforeEach
+    fun setup() {
+        test{{ entityName }} = {{ entityName }}(
+            id = 1L,
+            name = "Test {{ entityName }}",
+            description = "Test Description"
+        )
+        
+        test{{ entityName }}DTO = mapper.toDTO(test{{ entityName }})
+        
+        whenever(repository.findById(1L)).thenReturn(Optional.of(test{{ entityName }}))
+        whenever(repository.findAll()).thenReturn(listOf(test{{ entityName }}))
+        whenever(repository.save(any())).thenReturn(test{{ entityName }})
+    }
+    
+    @Test
+    fun testFindById() {
+        val found = service.findById(1L)
+        
+        assertThat(found).isNotNull
+        assertThat(found?.name).isEqualTo("Test {{ entityName }}")
+        verify(repository, times(1)).findById(1L)
+    }
+    
+    @Test
+    fun testFindAll() {
+        val result = service.findAll()
+        
+        assertThat(result).isNotNull
+        assertThat(result).hasSize(1)
+        assertThat(result[0].name).isEqualTo("Test {{ entityName }}")
+        verify(repository, times(1)).findAll()
+    }
+    
+    @Test
+    fun testCreate() {
+        val newDTO = {{ entityName }}DTO(
+            name = "New {{ entityName }}",
+            description = "New Description"
+        )
+        
+        val created = service.create(newDTO)
+        
+        assertThat(created).isNotNull
+        assertThat(created.name).isEqualTo("Test {{ entityName }}")  // Using our mock response
+        verify(repository, times(1)).save(any())
+    }
+    
+    @Test
+    fun testUpdate() {
+        whenever(repository.existsById(1L)).thenReturn(true)
+        
+        val updateDTO = {{ entityName }}DTO(
+            name = "Updated {{ entityName }}",
+            description = "Updated Description"
+        )
+        
+        val updated = service.update(1L, updateDTO)
+        
+        assertThat(updated).isNotNull
+        assertThat(updated.name).isEqualTo("Test {{ entityName }}")  // Using our mock response
+        verify(repository, times(1)).existsById(1L)
+        verify(repository, times(1)).save(any())
+    }
+    
+    @Test
+    fun testDelete() {
+        whenever(repository.existsById(1L)).thenReturn(true)
+        
+        service.delete(1L)
+        
+        verify(repository, times(1)).existsById(1L)
+        verify(repository, times(1)).deleteById(1L)
+    }
+    
+    {% if service_type == "domain-driven" %}
+    // Additional domain-driven design tests
+    @Test
+    fun testDomainSpecificBehavior() {
+        // Domain logic specific tests
+    }
+    {% elif service_type == "technical-layered" %}
+    // Additional technical/layered tests
+    @Test
+    fun testLayerInteractions() {
+        // Test interactions between layers
+    }
+    {% elif service_type == "data-driven" %}
+    // Additional data-driven tests
+    @Test
+    fun testDataTransformations() {
+        // Test data transformations
+    }
+    {% elif service_type == "function-oriented" %}
+    // Additional function-oriented tests
+    @Test
+    fun testBusinessFunctions() {
+        // Test specific business functions
+    }
+    {% endif %}
+}

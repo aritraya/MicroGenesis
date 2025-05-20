@@ -11,6 +11,7 @@ from microgenesis.logging import get_logger
 from microgenesis.config import Config
 
 logger = get_logger()
+config_manager = Config()
 
 def parse_arguments():
     """Parse command line arguments."""
@@ -98,20 +99,25 @@ def parse_arguments():
         choices=["logging", "swagger", "aws", "data", "config", "integration", "yaml-config", "generate-dtos"],
         help="Additional features to add"
     )
-    
-    # Service type
+      # Service type
     parser.add_argument(
         "--service-type",
         type=str,
-        choices=["domain-driven", "entity-driven"],
+        choices=["domain-driven", "entity-driven", "technical-layered", "data-driven", "function-oriented"],
         help="Type of service architecture to generate"
     )
-    
-    # Swagger file
+      # Swagger file
     parser.add_argument(
         "--swagger-file",
         type=str,
         help="Path to Swagger/OpenAPI definition file"
+    )
+    
+    # DDL script file
+    parser.add_argument(
+        "--ddl-file",
+        type=str,
+        help="Path to SQL DDL script file for entity generation"
     )
     
     # Schema mapping file
@@ -151,17 +157,20 @@ def parse_arguments():
     return parser.parse_args()
 
 def get_config_from_file(config_file: str) -> Dict[str, Any]:
-    """Load configuration from a JSON file.
+    """Load configuration from a file (JSON or YAML).
     
     Args:
-        config_file: Path to the JSON configuration file
+        config_file: Path to the configuration file
         
     Returns:
         Dict[str, Any]: Configuration dictionary
     """
     try:
-        with open(config_file, "r") as f:
-            return json.load(f)
+        # Create a temporary Config instance with this specific file
+        temp_config = Config(config_path=config_file)
+        
+        # Return a copy of the loaded configuration data
+        return temp_config.config_data.copy()
     except Exception as e:
         logger.error(f"Error loading configuration file: {e}")
         return {}
@@ -264,14 +273,13 @@ def prompt_for_config() -> Dict[str, Any]:
     features = [feature_options[int(choice) - 1] for choice in feature_choices if 0 < int(choice) <= len(feature_options)]
     
     config["features"] = features
-    
-    # Service type
-    service_options = ["domain-driven", "entity-driven"]
+      # Service type
+    service_options = ["domain-driven", "entity-driven", "technical-layered", "data-driven", "function-oriented"]
     print("\nService architecture type:")
     for i, option in enumerate(service_options):
         print(f"{i+1}. {option}")
     
-    service_choice = int(input("Select a service architecture (1-2): "))
+    service_choice = int(input("Select a service architecture (1-5): "))
     service_type = service_options[service_choice - 1]
     
     config["service_type"] = service_type
@@ -280,11 +288,15 @@ def prompt_for_config() -> Dict[str, Any]:
     swagger_file = input("\nPath to Swagger/OpenAPI definition file (optional): ")
     if swagger_file:
         config["swagger_file"] = swagger_file
-    
-    # Schema mapping file
+      # Schema mapping file
     schema_mapping = input("Path to schema relationship mapping file (optional): ")
     if schema_mapping:
         config["schema_mapping"] = schema_mapping
+        
+    # DDL script file
+    ddl_file = input("Path to SQL DDL script file for entity generation (optional): ")
+    if ddl_file:
+        config["ddl_file"] = ddl_file
     
     # Output directory
     output_dir = input("\nOutput directory (leave empty for current directory): ")
@@ -303,13 +315,11 @@ def merge_configs(config1: Dict[str, Any], config2: Dict[str, Any]) -> Dict[str,
     Returns:
         Dict[str, Any]: Merged configuration dictionary
     """
+    # Create a copy of config1 to avoid modifying the original
     result = config1.copy()
     
-    for key, value in config2.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = merge_configs(result[key], value)
-        else:
-            result[key] = value
+    # Use the Config class's deep update functionality
+    config_manager._deep_update(result, config2)
     
     return result
 
@@ -381,9 +391,11 @@ def prepare_config(args) -> Dict[str, Any]:
     
     if args.swagger_file:
         cli_config["swagger_file"] = args.swagger_file
-    
-    if args.schema_mapping:
+      if args.schema_mapping:
         cli_config["schema_mapping"] = args.schema_mapping
+        
+    if args.ddl_file:
+        cli_config["ddl_file"] = args.ddl_file
     
     if args.output_dir:
         cli_config["output_dir"] = args.output_dir

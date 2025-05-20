@@ -1,0 +1,99 @@
+package {{ base_package }}.controller
+
+import org.springframework.web.bind.annotation.*
+import org.springframework.http.ResponseEntity
+import org.springframework.http.HttpStatus
+import {{ base_package }}.dto.{{ entityName }}DTO
+import {{ base_package }}.service.{{ entityName }}Service
+import javax.validation.Valid
+
+{% if features is defined and 'swagger' in features %}
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
+{% endif %}
+
+/**
+ * REST controller for {{ entityName }}.
+ */
+@RestController
+@RequestMapping("/api/{{ entityName | lower }}s")
+{% if features is defined and 'swagger' in features %}
+@Tag(name = "{{ entityName }}", description = "{{ entityName }} API endpoints")
+{% endif %}
+class {{ entityName }}Controller(private val service: {{ entityName }}Service) {
+
+    @GetMapping
+    {% if features is defined and 'swagger' in features %}
+    @Operation(summary = "Get all {{ entityName }}s", description = "Returns a list of all {{ entityName }}s")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successful operation"),
+        ApiResponse(responseCode = "500", description = "Server error")
+    ])
+    {% endif %}
+    fun getAll(): ResponseEntity<List<{{ entityName }}DTO>> {
+        val dtos = service.findAll()
+        return ResponseEntity(dtos, HttpStatus.OK)
+    }
+
+    @GetMapping("/{id}")
+    {% if features is defined and 'swagger' in features %}
+    @Operation(summary = "Get {{ entityName }} by ID", description = "Returns a {{ entityName }} based on ID")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successful operation"),
+        ApiResponse(responseCode = "404", description = "{{ entityName }} not found"),
+        ApiResponse(responseCode = "500", description = "Server error")
+    ])
+    {% endif %}
+    fun getById(@PathVariable id: Long): ResponseEntity<{{ entityName }}DTO> {
+        val dto = service.findById(id)
+        return ResponseEntity(dto, HttpStatus.OK)
+    }
+
+    @PostMapping
+    {% if features is defined and 'swagger' in features %}
+    @Operation(summary = "Create {{ entityName }}", description = "Creates a new {{ entityName }}")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "{{ entityName }} created"),
+        ApiResponse(responseCode = "400", description = "Invalid input"),
+        ApiResponse(responseCode = "500", description = "Server error")
+    ])
+    {% endif %}
+    fun create(@Valid @RequestBody dto: {{ entityName }}DTO): ResponseEntity<{{ entityName }}DTO> {
+        val createdDTO = service.create(dto)
+        return ResponseEntity(createdDTO, HttpStatus.CREATED)
+    }
+
+    @PutMapping("/{id}")
+    {% if features is defined and 'swagger' in features %}
+    @Operation(summary = "Update {{ entityName }}", description = "Updates an existing {{ entityName }}")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "{{ entityName }} updated"),
+        ApiResponse(responseCode = "400", description = "Invalid input"),
+        ApiResponse(responseCode = "404", description = "{{ entityName }} not found"),
+        ApiResponse(responseCode = "500", description = "Server error")
+    ])
+    {% endif %}
+    fun update(
+        @PathVariable id: Long,
+        @Valid @RequestBody dto: {{ entityName }}DTO
+    ): ResponseEntity<{{ entityName }}DTO> {
+        val updatedDTO = service.update(id, dto)
+        return ResponseEntity(updatedDTO, HttpStatus.OK)
+    }
+
+    @DeleteMapping("/{id}")
+    {% if features is defined and 'swagger' in features %}
+    @Operation(summary = "Delete {{ entityName }}", description = "Deletes an {{ entityName }} by ID")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "{{ entityName }} deleted"),
+        ApiResponse(responseCode = "404", description = "{{ entityName }} not found"),
+        ApiResponse(responseCode = "500", description = "Server error")
+    ])
+    {% endif %}
+    fun delete(@PathVariable id: Long): ResponseEntity<Void> {
+        service.delete(id)
+        return ResponseEntity(HttpStatus.NO_CONTENT)
+    }
+}

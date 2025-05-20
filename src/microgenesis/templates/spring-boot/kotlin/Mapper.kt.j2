@@ -1,0 +1,43 @@
+package {{ base_package }}.mapper
+
+import org.springframework.stereotype.Component
+import {{ base_package }}.dto.{{ entityName }}DTO
+import {{ base_package }}.model.{{ entityName }}
+
+/**
+ * Mapper for converting between {{ entityName }} entity and DTO.
+ */
+@Component
+class {{ entityName }}Mapper {
+
+    /**
+     * Convert entity to DTO.
+     *
+     * @param entity the entity to convert
+     * @return the DTO
+     */
+    fun toDTO(entity: {{ entityName }}): {{ entityName }}DTO {
+        return {{ entityName }}DTO(
+            id = entity.id,
+            name = entity.name,
+            description = entity.description,
+            createdAt = entity.createdAt,
+            updatedAt = entity.updatedAt
+        )
+    }
+
+    /**
+     * Convert DTO to entity.
+     *
+     * @param dto the DTO to convert
+     * @return the entity
+     */
+    fun toEntity(dto: {{ entityName }}DTO): {{ entityName }} {
+        return {{ entityName }}(
+            id = dto.id,
+            name = dto.name,
+            description = dto.description
+            // createdAt and updatedAt are managed automatically
+        )
+    }
+}

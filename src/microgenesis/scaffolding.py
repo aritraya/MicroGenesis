@@ -22,8 +22,7 @@ class ScaffoldingEngine:
         """
         self.output_dir = output_dir
         self.logger = get_logger()
-        
-    def generate_project(self, config: Dict[str, Any]) -> str:
+          def generate_project(self, config: Dict[str, Any]) -> str:
         """Generate a project based on the provided configuration.
         
         Args:
@@ -38,7 +37,11 @@ class ScaffoldingEngine:
         project_name = config.get("project_name", "app")
         base_package = config.get("base_package", "com.example")
         language = config.get("language", {}).get("name", "java")
+        language_version = config.get("language", {}).get("version", "11")
         framework = config.get("framework", {}).get("name", "spring-boot")
+        framework_version = config.get("framework", {}).get("version", "2.7.0")
+        service_type = config.get("service_type", "domain-driven")
+        build_system = config.get("build_system", {}).get("name", "maven")
         
         # Create project directory
         if not self.output_dir:
@@ -49,14 +52,27 @@ class ScaffoldingEngine:
         
         self.logger.info(f"Project will be generated at: {project_dir}")
         
+        # Process DDL file if provided
+        entities = []
+        if "ddl_file" in config and config["ddl_file"]:
+            try:
+                from microgenesis.generators.schema.ddl_parser import DDLParser
+                ddl_parser = DDLParser()
+                ddl_file = config["ddl_file"]
+                self.logger.info(f"Parsing DDL file: {ddl_file}")
+                entities = ddl_parser.parse_ddl_file(ddl_file)
+                config["entities"] = entities
+                self.logger.info(f"Found {len(entities)} entities in DDL file")
+            except Exception as e:
+                self.logger.error(f"Error parsing DDL file: {e}")
+        
         # Generate code based on framework and language
         generator = self._get_generator(framework, language)
         generator.generate(project_dir, config)
         
         # Return the path to the generated project
         return project_dir
-    
-    def _get_generator(self, framework: str, language: str):
+      def _get_generator(self, framework: str, language: str):
         """Get the appropriate generator for the framework and language.
         
         Args:
@@ -85,6 +101,9 @@ class ScaffoldingEngine:
             if language == "java":
                 from microgenesis.generators.graphql.java import GraphQLJavaGenerator
                 return GraphQLJavaGenerator()
+            elif language == "kotlin":
+                from microgenesis.generators.graphql.kotlin import GraphQLKotlinGenerator
+                return GraphQLKotlinGenerator()
         
         # Default fallback
         from microgenesis.generators.base import BaseGenerator

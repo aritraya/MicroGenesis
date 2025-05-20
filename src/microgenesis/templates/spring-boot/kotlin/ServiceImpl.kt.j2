@@ -1,0 +1,77 @@
+package {{ base_package }}.service.impl
+
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import {{ base_package }}.dto.{{ entityName }}DTO
+import {{ base_package }}.model.{{ entityName }}
+import {{ base_package }}.repository.{{ entityName }}Repository
+import {{ base_package }}.service.{{ entityName }}Service
+import {{ base_package }}.mapper.{{ entityName }}Mapper
+import java.util.List
+import javax.persistence.EntityNotFoundException
+
+/**
+ * Implementation of {{ entityName }}Service interface.
+ */
+@Service
+class {{ entityName }}ServiceImpl(
+    private val repository: {{ entityName }}Repository,
+    private val mapper: {{ entityName }}Mapper
+) : {{ entityName }}Service {
+
+    @Transactional(readOnly = true)
+    override fun findAll(): List<{{ entityName }}DTO> {
+        return repository.findAll().map { mapper.toDTO(it) }
+    }
+
+    @Transactional(readOnly = true)
+    override fun findById(id: Long): {{ entityName }}DTO? {
+        return repository.findById(id)
+            .map { mapper.toDTO(it) }
+            .orElseThrow { EntityNotFoundException("{{ entityName }} not found with ID: $id") }
+    }
+
+    @Transactional
+    override fun create(dto: {{ entityName }}DTO): {{ entityName }}DTO {
+        val entity = mapper.toEntity(dto)
+        val savedEntity = repository.save(entity)
+        return mapper.toDTO(savedEntity)
+    }
+
+    @Transactional
+    override fun update(id: Long, dto: {{ entityName }}DTO): {{ entityName }}DTO {
+        if (!repository.existsById(id)) {
+            throw EntityNotFoundException("{{ entityName }} not found with ID: $id")
+        }
+        
+        val entity = mapper.toEntity(dto)
+        entity.id = id
+        val updatedEntity = repository.save(entity)
+        return mapper.toDTO(updatedEntity)
+    }
+
+    @Transactional
+    override fun delete(id: Long) {
+        if (!repository.existsById(id)) {
+            throw EntityNotFoundException("{{ entityName }} not found with ID: $id")
+        }
+        repository.deleteById(id)
+    }
+    
+    {% if service_type == "domain-driven" %}
+    // Domain-driven design specific methods would go here
+    // These methods would contain business logic and domain-specific operations
+    {% elif service_type == "entity-driven" %}
+    // Entity-driven design - focusing on CRUD operations
+    // This is already implemented with the standard methods
+    {% elif service_type == "technical-layered" %}
+    // Technical/layered approach - focusing on separation of concerns
+    // Additional technical service methods would go here
+    {% elif service_type == "data-driven" %}
+    // Data-driven approach - focusing on data operations and transformations
+    // Methods focused on data processing would go here
+    {% elif service_type == "function-oriented" %}
+    // Function-oriented approach - focusing on specific business functions
+    // Business function implementations would go here
+    {% endif %}
+}

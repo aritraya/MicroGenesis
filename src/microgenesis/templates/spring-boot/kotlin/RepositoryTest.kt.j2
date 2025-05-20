@@ -1,0 +1,55 @@
+package {{ base_package }}.repository
+
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.test.context.ActiveProfiles
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.BeforeEach
+import org.assertj.core.api.Assertions.assertThat
+
+import {{ base_package }}.model.{{ entityName }}
+
+/**
+ * Repository tests for {{ entityName }}.
+ */
+@DataJpaTest
+@ActiveProfiles("test")
+class {{ entityName }}RepositoryTest {
+
+    @Autowired
+    private lateinit var repository: {{ entityName }}Repository
+    
+    private lateinit var test{{ entityName }}: {{ entityName }}
+    
+    @BeforeEach
+    fun setup() {
+        test{{ entityName }} = {{ entityName }}(
+            name = "Test {{ entityName }}",
+            description = "Test Description"
+        )
+        
+        test{{ entityName }} = repository.save(test{{ entityName }})
+    }
+    
+    @Test
+    fun testFindById() {
+        val found = repository.findById(test{{ entityName }}.id!!).orElse(null)
+        assertThat(found).isNotNull
+        assertThat(found.name).isEqualTo("Test {{ entityName }}")
+    }
+    
+    @Test
+    fun testFindByName() {
+        val found = repository.findByName("Test {{ entityName }}")
+        assertThat(found).isNotNull
+        assertThat(found?.id).isEqualTo(test{{ entityName }}.id)
+    }
+    
+    @Test
+    fun testDeleteEntity() {
+        repository.delete(test{{ entityName }})
+        
+        val found = repository.findById(test{{ entityName }}.id!!).orElse(null)
+        assertThat(found).isNull()
+    }
+}
