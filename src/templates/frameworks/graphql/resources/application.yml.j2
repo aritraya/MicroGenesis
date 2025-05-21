@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: {{ project_name }}
+  {% if database.name %}
+  datasource:
+    url: jdbc:{{ database.name }}://localhost:{{ database.port | default('5432') }}/{{ project_name | lower }}
+    username: {{ database.username | default('postgres') }}
+    password: {{ database.password | default('postgres') }}
+  {% endif %}
+
+graphql:
+  packages:
+    - "{{ base_package }}"
+  playground:
+    enabled: true
+    endpoint: "/graphql"
+    subscriptions:
+      enabled: true
+      endpoint: "/subscriptions"
+  schema:
+    introspection:
+      enabled: true

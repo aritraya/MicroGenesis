@@ -1,0 +1,70 @@
+package {{ base_package }}.service
+
+import {{ base_package }}.model.SampleEntity
+import {{ base_package }}.repository.SampleEntityRepository
+import org.springframework.stereotype.Service
+import java.util.UUID
+import org.springframework.transaction.annotation.Transactional
+
+/**
+ * Service for managing SampleEntity instances.
+ */
+@Service
+class SampleEntityService(
+    private val repository: SampleEntityRepository
+) {
+    /**
+     * Find a sample entity by ID.
+     */
+    fun findById(id: UUID): SampleEntity? {
+        return repository.findById(id).orElse(null)
+    }
+    
+    /**
+     * Find all sample entities.
+     */
+    fun findAll(): List<SampleEntity> {
+        return repository.findAll().toList()
+    }
+    
+    /**
+     * Create a new sample entity.
+     */
+    @Transactional
+    fun create(name: String, description: String?): SampleEntity {
+        val entity = SampleEntity(
+            name = name,
+            description = description
+        )
+        
+        return repository.save(entity)
+    }
+    
+    /**
+     * Update an existing sample entity.
+     */
+    @Transactional
+    fun update(id: UUID, name: String, description: String?): SampleEntity? {
+        val entity = repository.findById(id).orElse(null) ?: return null
+        
+        entity.update(
+            name = name,
+            description = description
+        )
+        
+        return repository.save(entity)
+    }
+    
+    /**
+     * Delete a sample entity.
+     */
+    @Transactional
+    fun delete(id: UUID): Boolean {
+        if (!repository.existsById(id)) {
+            return false
+        }
+        
+        repository.deleteById(id)
+        return true
+    }
+}

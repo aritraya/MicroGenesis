@@ -1,0 +1,48 @@
+package {{ base_package }}.infrastructure.persistence
+
+import {{ base_package }}.domain.model.SampleEntity
+import {{ base_package }}.domain.repository.SampleEntityRepository
+import org.springframework.stereotype.Repository
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * In-memory implementation of the SampleEntityRepository.
+ * 
+ * In a real application, this would likely use JPA, MongoDB, or another persistence mechanism.
+ */
+@Repository
+class InMemorySampleEntityRepository : SampleEntityRepository {
+    private val entities = ConcurrentHashMap<UUID, SampleEntity>()
+    
+    override fun findById(id: UUID): SampleEntity? {
+        return entities[id]
+    }
+    
+    override fun findAll(): List<SampleEntity> {
+        return entities.values.toList()
+    }
+    
+    override fun save(entity: SampleEntity): SampleEntity {
+        entities[entity.id] = entity
+        return entity
+    }
+    
+    override fun deleteById(id: UUID): Boolean {
+        return entities.remove(id) != null
+    }
+}
+
+/**
+ * JPA implementation of the SampleEntityRepository.
+ * 
+ * This would be used in real applications with a relational database.
+ */
+/* Commented out as it requires JPA dependencies and entity mapping
+@Repository
+class JpaSampleEntityRepository(
+    private val jpaRepository: SampleEntityJpaRepository
+) : SampleEntityRepository {
+    // Implementation using JPA
+}
+*/

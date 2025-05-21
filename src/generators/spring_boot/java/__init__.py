@@ -6,6 +6,7 @@ from typing import Dict, List, Any, Optional
 import re
 
 from src.generators.base import BaseGenerator
+from src.generators.architecture import ServiceArchitecture
 from src.core.logging import get_logger
 
 
@@ -118,25 +119,33 @@ class SpringBootJavaGenerator(BaseGenerator):
         base_package = config.get("base_package", "com.example")
         base_package_path = base_package.replace(".", os.path.sep)
         project_name = config.get("project_name", "app")
-        
-        # Main source directories
+          # Main source directories
         src_main_java = os.path.join(project_dir, "src", "main", "java", base_package_path)
         os.makedirs(src_main_java, exist_ok=True)
         
         src_main_resources = os.path.join(project_dir, "src", "main", "resources")
         os.makedirs(src_main_resources, exist_ok=True)
         
-        # Create standard directories
-        for dir_name in ["controller", "service", "repository", "model", "dto", "config", "exception"]:
-            os.makedirs(os.path.join(src_main_java, dir_name), exist_ok=True)        # Context for template rendering
+        # Get the appropriate architecture implementation
+        service_type = config.get("service_type", "domain-driven")
+        architecture = ServiceArchitecture.get_architecture(service_type)
+        
+        # Create architecture-specific directory structure
+        architecture.create_directory_structure(src_main_java, config)
+        
+        # Add architecture-specific context
         context = {
             "base_package": base_package,
             "project_name": project_name,
             "application_name": self._to_pascal_case(project_name) + "Application",
             "database": self.get_safe_database_config(config),
             "features": config.get("features", []),
-            "service_type": config.get("service_type", "domain-driven"),
+            "service_type": service_type,
+            "package_structure": architecture.get_package_structure()
         }
+        
+        # Add architecture-specific context additions
+        context.update(architecture.get_template_context_additions(config))
         
         # Generate application class
         app_class_content = self.render_template("spring-boot/java/Application.java.j2", context)

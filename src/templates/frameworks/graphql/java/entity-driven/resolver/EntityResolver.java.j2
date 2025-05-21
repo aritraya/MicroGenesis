@@ -1,0 +1,121 @@
+package {{ package_name }}.resolver;
+
+import {{ package_name }}.entity.{{ entity_name }};
+import {{ package_name }}.dto.{{ entity_name }}Dto;
+import {{ package_name }}.service.{{ entity_name }}Service;
+import {{ package_name }}.mapper.{{ entity_name }}Mapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.stereotype.Controller;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * GraphQL resolver for {{ entity_name }} entities.
+ */
+@Controller
+public class {{ entity_name }}Resolver {
+
+    private final {{ entity_name }}Service {{ entity_name | lower }}Service;
+    private final {{ entity_name }}Mapper {{ entity_name | lower }}Mapper;
+
+    @Autowired
+    public {{ entity_name }}Resolver({{ entity_name }}Service {{ entity_name | lower }}Service, {{ entity_name }}Mapper {{ entity_name | lower }}Mapper) {
+        this.{{ entity_name | lower }}Service = {{ entity_name | lower }}Service;
+        this.{{ entity_name | lower }}Mapper = {{ entity_name | lower }}Mapper;
+    }
+
+    /**
+     * Query to get all {{ entity_name | lower }}s.
+     *
+     * @return list of {{ entity_name }}Dto objects
+     */
+    @QueryMapping
+    public List<{{ entity_name }}Dto> get{{ entity_name }}s() {
+        return {{ entity_name | lower }}Service.findAll().stream()
+                .map({{ entity_name | lower }}Mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Query to get a specific {{ entity_name | lower }} by ID.
+     *
+     * @param {{ id_field_name }} the {{ entity_name | lower }} identifier
+     * @return the {{ entity_name }}Dto if found
+     */
+    @QueryMapping
+    public {{ entity_name }}Dto get{{ entity_name }}(@Argument {{ id_type }} {{ id_field_name }}) {
+        return {{ entity_name | lower }}Mapper.toDto({{ entity_name | lower }}Service.findById({{ id_field_name }}));
+    }
+
+    /**
+     * Mutation to create a new {{ entity_name | lower }}.
+     *
+     * @param input the {{ entity_name }}Dto with input data
+     * @return the created {{ entity_name }}Dto
+     */
+    @MutationMapping
+    public {{ entity_name }}Dto create{{ entity_name }}(@Argument {{ entity_name }}Dto input) {
+        {{ entity_name }} {{ entity_name | lower }} = {{ entity_name | lower }}Mapper.toEntity(input);
+        {{ entity_name }} created{{ entity_name }} = {{ entity_name | lower }}Service.save({{ entity_name | lower }});
+        return {{ entity_name | lower }}Mapper.toDto(created{{ entity_name }});
+    }
+
+    /**
+     * Mutation to update an existing {{ entity_name | lower }}.
+     *
+     * @param {{ id_field_name }} the {{ entity_name | lower }} identifier
+     * @param input the {{ entity_name }}Dto with updated data
+     * @return the updated {{ entity_name }}Dto
+     */
+    @MutationMapping
+    public {{ entity_name }}Dto update{{ entity_name }}(@Argument {{ id_type }} {{ id_field_name }}, @Argument {{ entity_name }}Dto input) {
+        {{ entity_name }} {{ entity_name | lower }} = {{ entity_name | lower }}Mapper.toEntity(input);
+        {{ entity_name | lower }}.set{{ id_field_name | capitalize }}({{ id_field_name }});
+        {{ entity_name }} updated{{ entity_name }} = {{ entity_name | lower }}Service.update({{ entity_name | lower }});
+        return {{ entity_name | lower }}Mapper.toDto(updated{{ entity_name }});
+    }
+
+    /**
+     * Mutation to delete a {{ entity_name | lower }}.
+     *
+     * @param {{ id_field_name }} the {{ entity_name | lower }} identifier
+     * @return true if deleted successfully
+     */
+    @MutationMapping
+    public boolean delete{{ entity_name }}(@Argument {{ id_type }} {{ id_field_name }}) {
+        {{ entity_name | lower }}Service.deleteById({{ id_field_name }});
+        return true;
+    }
+
+    {% if features is defined and features.soft_delete %}
+    /**
+     * Query to get all active (not deleted) {{ entity_name | lower }}s.
+     *
+     * @return list of active {{ entity_name }}Dto objects
+     */
+    @QueryMapping
+    public List<{{ entity_name }}Dto> getActive{{ entity_name }}s() {
+        return {{ entity_name | lower }}Service.findAllActive().stream()
+                .map({{ entity_name | lower }}Mapper::toDto)
+                .collect(Collectors.toList());
+    }
+    {% endif %}
+
+    {% if features is defined and features.tenant_aware %}
+    /**
+     * Query to get all {{ entity_name | lower }}s for a specific tenant.
+     *
+     * @param tenantId the tenant identifier
+     * @return list of {{ entity_name }}Dto objects for the tenant
+     */
+    @QueryMapping
+    public List<{{ entity_name }}Dto> get{{ entity_name }}sByTenant(@Argument String tenantId) {
+        return {{ entity_name | lower }}Service.findByTenantId(tenantId).stream()
+                .map({{ entity_name | lower }}Mapper::toDto)
+                .collect(Collectors.toList());
+    }
+    {% endif %}
+}

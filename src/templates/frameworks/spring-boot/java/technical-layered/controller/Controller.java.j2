@@ -1,0 +1,114 @@
+package {{ package_name }}.controller;
+
+import {{ package_name }}.dto.{{ entity_name }}Dto;
+import {{ package_name }}.service.{{ entity_name }}Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import javax.validation.Valid;
+
+/**
+ * REST Controller for {{ entity_name }} resources.
+ */
+@RestController
+@RequestMapping("/api/{{ entity_name | lower }}s")
+public class {{ entity_name }}Controller {
+
+    private final {{ entity_name }}Service {{ entity_name | lower }}Service;
+
+    @Autowired
+    public {{ entity_name }}Controller({{ entity_name }}Service {{ entity_name | lower }}Service) {
+        this.{{ entity_name | lower }}Service = {{ entity_name | lower }}Service;
+    }
+
+    /**
+     * Get all {{ entity_name | lower }}s.
+     *
+     * @return list of all {{ entity_name }}Dto objects
+     */
+    @GetMapping
+    public ResponseEntity<List<{{ entity_name }}Dto>> getAll{{ entity_name }}s() {
+        List<{{ entity_name }}Dto> {{ entity_name | lower }}s = {{ entity_name | lower }}Service.findAll();
+        return new ResponseEntity<>({{ entity_name | lower }}s, HttpStatus.OK);
+    }
+
+    /**
+     * Get a specific {{ entity_name | lower }} by ID.
+     *
+     * @param id the {{ entity_name | lower }} identifier
+     * @return the {{ entity_name }}Dto if found
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<{{ entity_name }}Dto> get{{ entity_name }}(@PathVariable {{ id_type }} id) {
+        {{ entity_name }}Dto {{ entity_name | lower }} = {{ entity_name | lower }}Service.findById(id);
+        return new ResponseEntity<>({{ entity_name | lower }}, HttpStatus.OK);
+    }
+
+    /**
+     * Create a new {{ entity_name | lower }}.
+     *
+     * @param {{ entity_name | lower }}Dto the {{ entity_name }}Dto with input data
+     * @return the created {{ entity_name }}Dto
+     */
+    @PostMapping
+    public ResponseEntity<{{ entity_name }}Dto> create{{ entity_name }}(@Valid @RequestBody {{ entity_name }}Dto {{ entity_name | lower }}Dto) {
+        {{ entity_name }}Dto created{{ entity_name }} = {{ entity_name | lower }}Service.create({{ entity_name | lower }}Dto);
+        return new ResponseEntity<>(created{{ entity_name }}, HttpStatus.CREATED);
+    }
+
+    /**
+     * Update an existing {{ entity_name | lower }}.
+     *
+     * @param id the {{ entity_name | lower }} identifier
+     * @param {{ entity_name | lower }}Dto the {{ entity_name }}Dto with updated data
+     * @return the updated {{ entity_name }}Dto
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<{{ entity_name }}Dto> update{{ entity_name }}(@PathVariable {{ id_type }} id, 
+                                         @Valid @RequestBody {{ entity_name }}Dto {{ entity_name | lower }}Dto) {
+        {{ entity_name }}Dto updated{{ entity_name }} = {{ entity_name | lower }}Service.update(id, {{ entity_name | lower }}Dto);
+        return new ResponseEntity<>(updated{{ entity_name }}, HttpStatus.OK);
+    }
+
+    /**
+     * Delete a {{ entity_name | lower }}.
+     *
+     * @param id the {{ entity_name | lower }} identifier
+     * @return no content response
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete{{ entity_name }}(@PathVariable {{ id_type }} id) {
+        {{ entity_name | lower }}Service.delete(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    {% if features is defined and features.soft_delete %}
+    /**
+     * Get all active (not deleted) {{ entity_name | lower }}s.
+     *
+     * @return list of active {{ entity_name }}Dto objects
+     */
+    @GetMapping("/active")
+    public ResponseEntity<List<{{ entity_name }}Dto>> getActive{{ entity_name }}s() {
+        List<{{ entity_name }}Dto> active{{ entity_name }}s = {{ entity_name | lower }}Service.findAllActive();
+        return new ResponseEntity<>(active{{ entity_name }}s, HttpStatus.OK);
+    }
+    {% endif %}
+
+    {% if features is defined and features.tenant_aware %}
+    /**
+     * Get all {{ entity_name | lower }}s for a specific tenant.
+     *
+     * @param tenantId the tenant identifier
+     * @return list of {{ entity_name }}Dto objects for the tenant
+     */
+    @GetMapping("/tenant/{tenantId}")
+    public ResponseEntity<List<{{ entity_name }}Dto>> get{{ entity_name }}sByTenant(@PathVariable String tenantId) {
+        List<{{ entity_name }}Dto> tenant{{ entity_name }}s = {{ entity_name | lower }}Service.findByTenantId(tenantId);
+        return new ResponseEntity<>(tenant{{ entity_name }}s, HttpStatus.OK);
+    }
+    {% endif %}
+}

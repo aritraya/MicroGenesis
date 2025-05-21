@@ -1,0 +1,189 @@
+package {{ package_name }}.resolver;
+
+import {{ package_name }}.entity.{{ entity_name }};
+import {{ package_name }}.dto.{{ entity_name }}Dto;
+import {{ package_name }}.service.{{ entity_name }}Service;
+import {{ package_name }}.mapper.{{ entity_name }}Mapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.graphql.test.tester.GraphQlTester;
+import org.springframework.graphql.test.tester.HttpGraphQlTester;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.graphql.server.WebGraphQlHandler;
+import org.springframework.graphql.server.WebGraphQlInterceptor;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class {{ entity_name }}ResolverTest {
+
+    @Mock
+    private {{ entity_name }}Service {{ entity_name | lower }}Service;
+
+    @Mock
+    private {{ entity_name }}Mapper {{ entity_name | lower }}Mapper;
+
+    @InjectMocks
+    private {{ entity_name }}Resolver {{ entity_name | lower }}Resolver;
+
+    private GraphQlTester graphQlTester;
+
+    @BeforeEach
+    void setUp() {
+        // Setup a GraphQlTester for testing GraphQL operations
+        WebGraphQlHandler webGraphQlHandler = // setup your WebGraphQlHandler
+        graphQlTester = HttpGraphQlTester.builder(WebTestClient.bindToController(webGraphQlHandler))
+                .build();
+    }
+
+    @Test
+    void testGetAll{{ entity_name }}s() {
+        // Arrange
+        {{ entity_name }} {{ entity_name | lower }}1 = new {{ entity_name }}();
+        {{ entity_name | lower }}1.set{{ id_field_name | capitalize }}({% if id_type == "Long" %}1L{% elif id_type == "Integer" %}1{% elif id_type == "UUID" %}UUID.randomUUID(){% else %}1{% endif %});
+        
+        {{ entity_name }} {{ entity_name | lower }}2 = new {{ entity_name }}();
+        {{ entity_name | lower }}2.set{{ id_field_name | capitalize }}({% if id_type == "Long" %}2L{% elif id_type == "Integer" %}2{% elif id_type == "UUID" %}UUID.randomUUID(){% else %}2{% endif %});
+        
+        List<{{ entity_name }}> {{ entity_name | lower }}s = Arrays.asList({{ entity_name | lower }}1, {{ entity_name | lower }}2);
+        
+        {{ entity_name }}Dto {{ entity_name | lower }}Dto1 = new {{ entity_name }}Dto();
+        {{ entity_name }}Dto {{ entity_name | lower }}Dto2 = new {{ entity_name }}Dto();
+        
+        when({{ entity_name | lower }}Service.findAll()).thenReturn({{ entity_name | lower }}s);
+        when({{ entity_name | lower }}Mapper.toDto({{ entity_name | lower }}1)).thenReturn({{ entity_name | lower }}Dto1);
+        when({{ entity_name | lower }}Mapper.toDto({{ entity_name | lower }}2)).thenReturn({{ entity_name | lower }}Dto2);
+
+        // Act and Assert
+        String query = "{ get{{ entity_name }}s { {{ id_field_name }} } }";
+        
+        graphQlTester.document(query)
+                .execute()
+                .path("get{{ entity_name }}s")
+                .entityList({{ entity_name }}Dto.class)
+                .hasSize(2);
+        
+        verify({{ entity_name | lower }}Service).findAll();
+        verify({{ entity_name | lower }}Mapper, times(2)).toDto(any({{ entity_name }}.class));
+    }
+
+    @Test
+    void testGet{{ entity_name }}ById() {
+        // Arrange
+        {{ id_type }} {{ id_field_name }} = {% if id_type == "Long" %}1L{% elif id_type == "Integer" %}1{% elif id_type == "UUID" %}UUID.randomUUID(){% else %}1{% endif %};
+        {{ entity_name }} {{ entity_name | lower }} = new {{ entity_name }}();
+        {{ entity_name | lower }}.set{{ id_field_name | capitalize }}({{ id_field_name }});
+        
+        {{ entity_name }}Dto {{ entity_name | lower }}Dto = new {{ entity_name }}Dto();
+        {{ entity_name | lower }}Dto.set{{ id_field_name | capitalize }}({{ id_field_name }});
+        
+        when({{ entity_name | lower }}Service.findById({{ id_field_name }})).thenReturn({{ entity_name | lower }});
+        when({{ entity_name | lower }}Mapper.toDto({{ entity_name | lower }})).thenReturn({{ entity_name | lower }}Dto);
+
+        // Act and Assert
+        String query = "{ get{{ entity_name }}({{ id_field_name }}: \"" + {{ id_field_name }} + "\") { {{ id_field_name }} } }";
+        
+        graphQlTester.document(query)
+                .execute()
+                .path("get{{ entity_name }}")
+                .entity({{ entity_name }}Dto.class)
+                .satisfies(dto -> {
+                    assert dto.get{{ id_field_name | capitalize }}().equals({{ id_field_name }});
+                });
+        
+        verify({{ entity_name | lower }}Service).findById({{ id_field_name }});
+        verify({{ entity_name | lower }}Mapper).toDto({{ entity_name | lower }});
+    }
+
+    @Test
+    void testCreate{{ entity_name }}() {
+        // Arrange
+        {{ entity_name }}Dto inputDto = new {{ entity_name }}Dto();
+        // Set necessary fields on inputDto
+        
+        {{ entity_name }} {{ entity_name | lower }} = new {{ entity_name }}();
+        {{ entity_name }} saved{{ entity_name }} = new {{ entity_name }}();
+        saved{{ entity_name }}.set{{ id_field_name | capitalize }}({% if id_type == "Long" %}1L{% elif id_type == "Integer" %}1{% elif id_type == "UUID" %}UUID.randomUUID(){% else %}1{% endif %});
+        
+        {{ entity_name }}Dto outputDto = new {{ entity_name }}Dto();
+        outputDto.set{{ id_field_name | capitalize }}(saved{{ entity_name }}.get{{ id_field_name | capitalize }}());
+        
+        when({{ entity_name | lower }}Mapper.toEntity(inputDto)).thenReturn({{ entity_name | lower }});
+        when({{ entity_name | lower }}Service.save({{ entity_name | lower }})).thenReturn(saved{{ entity_name }});
+        when({{ entity_name | lower }}Mapper.toDto(saved{{ entity_name }})).thenReturn(outputDto);
+
+        // Act and Assert
+        String mutation = "mutation { create{{ entity_name }}(input: { /* fields */ }) { {{ id_field_name }} } }";
+        
+        graphQlTester.document(mutation)
+                .execute()
+                .path("create{{ entity_name }}")
+                .entity({{ entity_name }}Dto.class)
+                .satisfies(dto -> {
+                    assert dto.get{{ id_field_name | capitalize }}() != null;
+                });
+        
+        verify({{ entity_name | lower }}Mapper).toEntity(any({{ entity_name }}Dto.class));
+        verify({{ entity_name | lower }}Service).save(any({{ entity_name }}.class));
+        verify({{ entity_name | lower }}Mapper).toDto(any({{ entity_name }}.class));
+    }
+
+    @Test
+    void testUpdate{{ entity_name }}() {
+        // Arrange
+        {{ id_type }} {{ id_field_name }} = {% if id_type == "Long" %}1L{% elif id_type == "Integer" %}1{% elif id_type == "UUID" %}UUID.randomUUID(){% else %}1{% endif %};
+        {{ entity_name }}Dto inputDto = new {{ entity_name }}Dto();
+        // Set necessary fields on inputDto
+        
+        {{ entity_name }} {{ entity_name | lower }} = new {{ entity_name }}();
+        {{ entity_name }} updated{{ entity_name }} = new {{ entity_name }}();
+        updated{{ entity_name }}.set{{ id_field_name | capitalize }}({{ id_field_name }});
+        
+        {{ entity_name }}Dto outputDto = new {{ entity_name }}Dto();
+        outputDto.set{{ id_field_name | capitalize }}({{ id_field_name }});
+        
+        when({{ entity_name | lower }}Mapper.toEntity(inputDto)).thenReturn({{ entity_name | lower }});
+        when({{ entity_name | lower }}Service.update({{ entity_name | lower }})).thenReturn(updated{{ entity_name }});
+        when({{ entity_name | lower }}Mapper.toDto(updated{{ entity_name }})).thenReturn(outputDto);
+
+        // Act and Assert
+        String mutation = "mutation { update{{ entity_name }}({{ id_field_name }}: \"" + {{ id_field_name }} + "\", input: { /* fields */ }) { {{ id_field_name }} } }";
+        
+        graphQlTester.document(mutation)
+                .execute()
+                .path("update{{ entity_name }}")
+                .entity({{ entity_name }}Dto.class)
+                .satisfies(dto -> {
+                    assert dto.get{{ id_field_name | capitalize }}().equals({{ id_field_name }});
+                });
+        
+        verify({{ entity_name | lower }}Mapper).toEntity(any({{ entity_name }}Dto.class));
+        verify({{ entity_name | lower }}Service).update(any({{ entity_name }}.class));
+        verify({{ entity_name | lower }}Mapper).toDto(any({{ entity_name }}.class));
+    }
+
+    @Test
+    void testDelete{{ entity_name }}() {
+        // Arrange
+        {{ id_type }} {{ id_field_name }} = {% if id_type == "Long" %}1L{% elif id_type == "Integer" %}1{% elif id_type == "UUID" %}UUID.randomUUID(){% else %}1{% endif %};
+        doNothing().when({{ entity_name | lower }}Service).deleteById({{ id_field_name }});
+
+        // Act and Assert
+        String mutation = "mutation { delete{{ entity_name }}({{ id_field_name }}: \"" + {{ id_field_name }} + "\") }";
+        
+        graphQlTester.document(mutation)
+                .execute()
+                .path("delete{{ entity_name }}")
+                .entity(Boolean.class)
+                .isEqualTo(true);
+        
+        verify({{ entity_name | lower }}Service).deleteById({{ id_field_name }});
+    }
+}

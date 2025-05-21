@@ -1,0 +1,54 @@
+package {{ base_package }}.domain.model
+
+import java.time.LocalDateTime
+import java.util.UUID
+
+/**
+ * Sample entity in the {{ bounded_context }} bounded context.
+ * 
+ * This represents a core domain entity with identity, lifecycle, and behavior.
+ */
+class SampleEntity private constructor(
+    val id: UUID,
+    private var name: String,
+    private var description: String?,
+    val createdAt: LocalDateTime,
+    private var updatedAt: LocalDateTime
+) {
+    companion object {
+        /**
+         * Factory method to create a new SampleEntity instance.
+         */
+        fun create(name: String, description: String?): SampleEntity {
+            val now = LocalDateTime.now()
+            return SampleEntity(
+                id = UUID.randomUUID(),
+                name = name,
+                description = description,
+                createdAt = now,
+                updatedAt = now
+            )
+        }
+    }
+    
+    /**
+     * Update entity properties.
+     */
+    fun update(name: String, description: String?): SampleEntity {
+        this.name = name
+        this.description = description
+        this.updatedAt = LocalDateTime.now()
+        
+        {% if has_domain_events %}
+        // Publish domain event
+        DomainEventPublisher.publish(SampleEntityUpdatedEvent(this.id, this.name))
+        {% endif %}
+        
+        return this
+    }
+    
+    // Getters
+    fun getName(): String = name
+    fun getDescription(): String? = description
+    fun getUpdatedAt(): LocalDateTime = updatedAt
+}

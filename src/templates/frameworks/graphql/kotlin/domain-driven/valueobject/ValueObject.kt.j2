@@ -1,0 +1,22 @@
+package {{ base_package }}.domain.valueobject
+
+/**
+ * Sample value object in the {{ bounded_context }} bounded context.
+ * 
+ * Value objects are immutable, have no identity, and are defined by their attributes.
+ */
+data class SampleValueObject(
+    val value: String,
+    val type: String
+) {
+    init {
+        // Validation rules
+        require(value.isNotBlank()) { "Value cannot be blank" }
+        require(type.isNotBlank()) { "Type cannot be blank" }
+    }
+    
+    // Value objects often include domain-specific methods
+    fun isValid(): Boolean = value.length >= 3 && type.length >= 2
+    
+    override fun toString(): String = "$type:$value"
+}

@@ -1,0 +1,47 @@
+package {{ base_package }}.domain.event
+
+import java.time.LocalDateTime
+import java.util.UUID
+
+/**
+ * Base interface for all domain events in the {{ bounded_context }} bounded context.
+ */
+interface DomainEvent {
+    val eventId: UUID
+    val occurredOn: LocalDateTime
+}
+
+/**
+ * Domain event published when a SampleEntity is created.
+ */
+data class SampleEntityCreatedEvent(
+    val entityId: UUID,
+    val name: String,
+    override val eventId: UUID = UUID.randomUUID(),
+    override val occurredOn: LocalDateTime = LocalDateTime.now()
+) : DomainEvent
+
+/**
+ * Domain event published when a SampleEntity is updated.
+ */
+data class SampleEntityUpdatedEvent(
+    val entityId: UUID,
+    val newName: String,
+    override val eventId: UUID = UUID.randomUUID(),
+    override val occurredOn: LocalDateTime = LocalDateTime.now()
+) : DomainEvent
+
+/**
+ * Simple event publisher for domain events.
+ */
+object DomainEventPublisher {
+    private val listeners = mutableListOf<(DomainEvent) -> Unit>()
+    
+    fun subscribe(listener: (DomainEvent) -> Unit) {
+        listeners.add(listener)
+    }
+    
+    fun publish(event: DomainEvent) {
+        listeners.forEach { it(event) }
+    }
+}

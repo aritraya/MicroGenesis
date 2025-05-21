@@ -1,0 +1,158 @@
+package {{ package_name }}.application
+
+import {{ package_name }}.domain.model.{{ entity_name }}
+import {{ package_name }}.domain.repository.{{ entity_name }}Repository
+import {{ package_name }}.domain.event.DomainEventPublisher
+import {{ package_name }}.domain.exception.EntityNotFoundException
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
+
+/**
+ * Application service for {{ entity_name }} operations.
+ * This service implements use cases involving {{ entity_name }} aggregates.
+ */
+@Service
+class {{ entity_name }}Service(
+    private val {{ entity_name | lower }}Repository: {{ entity_name }}Repository,
+    private val domainEventPublisher: DomainEventPublisher
+) {
+
+    /**
+     * Creates a new {{ entity_name }}.
+     *
+     * @param command The command containing creation data
+     * @return The ID of the created entity
+     */
+    @Transactional
+    fun create{{ entity_name }}(command: Create{{ entity_name }}Command): UUID {
+        // Create the aggregate through its factory method
+        val {{ entity_name | lower }} = {{ entity_name }}.create(
+            {% for field in fields %}
+            {{ field.name }} = command.{{ field.name }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        // Save the aggregate
+        val saved{{ entity_name }} = {{ entity_name | lower }}Repository.save({{ entity_name | lower }})
+        
+        // Publish domain events
+        domainEventPublisher.publishAll(saved{{ entity_name }}.getAndClearDomainEvents())
+        
+        return saved{{ entity_name }}.id
+    }
+
+    /**
+     * Updates an existing {{ entity_name }}.
+     *
+     * @param id The ID of the {{ entity_name }} to update
+     * @param command The command containing update data
+     */
+    @Transactional
+    fun update{{ entity_name }}(id: UUID, command: Update{{ entity_name }}Command) {
+        // Get the aggregate
+        val {{ entity_name | lower }} = {{ entity_name | lower }}Repository.findById(id)
+            ?: throw EntityNotFoundException("{{ entity_name }} not found with id: $id")
+            
+        // Update the aggregate using its behavior methods
+        {% for field in fields %}
+        {{ entity_name | lower }}.update{{ field.name | capitalize }}(command.{{ field.name }})
+        {% endfor %}
+        
+        // Save the updated aggregate
+        val updated{{ entity_name }} = {{ entity_name | lower }}Repository.save({{ entity_name | lower }})
+        
+        // Publish domain events
+        domainEventPublisher.publishAll(updated{{ entity_name }}.getAndClearDomainEvents())
+    }
+
+    /**
+     * Deletes a {{ entity_name }}.
+     *
+     * @param id The ID of the {{ entity_name }} to delete
+     */
+    @Transactional
+    fun delete{{ entity_name }}(id: UUID) {
+        val {{ entity_name | lower }} = {{ entity_name | lower }}Repository.findById(id)
+            ?: throw EntityNotFoundException("{{ entity_name }} not found with id: $id")
+            
+        {% if features is defined and features.soft_delete %}
+        {{ entity_name | lower }}.markAsDeleted()
+        {{ entity_name | lower }}Repository.save({{ entity_name | lower }})
+        {% else %}
+        {{ entity_name | lower }}Repository.delete({{ entity_name | lower }})
+        {% endif %}
+        
+        // Publish domain events
+        domainEventPublisher.publishAll({{ entity_name | lower }}.getAndClearDomainEvents())
+    }
+
+    /**
+     * Gets a {{ entity_name }} by ID.
+     *
+     * @param id The ID of the {{ entity_name }}
+     * @return The {{ entity_name }} aggregate
+     */
+    @Transactional(readOnly = true)
+    fun get{{ entity_name }}(id: UUID): {{ entity_name }} {
+        return {{ entity_name | lower }}Repository.findById(id)
+            ?: throw EntityNotFoundException("{{ entity_name }} not found with id: $id")
+    }
+
+    /**
+     * Gets all {{ entity_name }}s.
+     *
+     * @return List of all {{ entity_name }} aggregates
+     */
+    @Transactional(readOnly = true)
+    fun getAll{{ entity_name }}s(): List<{{ entity_name }}> {
+        return {{ entity_name | lower }}Repository.findAll()
+    }
+    
+    {% if features is defined and features.soft_delete %}
+    /**
+     * Gets all active {{ entity_name }}s.
+     *
+     * @return List of active {{ entity_name }} aggregates
+     */
+    @Transactional(readOnly = true)
+    fun getAllActive{{ entity_name }}s(): List<{{ entity_name }}> {
+        return {{ entity_name | lower }}Repository.findByDeletedFalse()
+    }
+    {% endif %}
+    
+    {% if features is defined and features.tenant_aware %}
+    /**
+     * Gets all {{ entity_name }}s for a specific tenant.
+     *
+     * @param tenantId The tenant ID
+     * @return List of {{ entity_name }} aggregates for the tenant
+     */
+    @Transactional(readOnly = true)
+    fun get{{ entity_name }}sByTenant(tenantId: String): List<{{ entity_name }}> {
+        return {{ entity_name | lower }}Repository.findByTenantId(tenantId)
+    }
+    {% endif %}
+}
+
+/**
+ * Command for creating a new {{ entity_name }}.
+ */
+data class Create{{ entity_name }}Command(
+    {% for field in fields %}
+    val {{ field.name }}: {{ field.type }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+    {% if features is defined and features.tenant_aware %}
+    {% if fields|length > 0 %},{% endif %}
+    val tenantId: String
+    {% endif %}
+)
+
+/**
+ * Command for updating an existing {{ entity_name }}.
+ */
+data class Update{{ entity_name }}Command(
+    {% for field in fields %}
+    val {{ field.name }}: {{ field.type }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+)

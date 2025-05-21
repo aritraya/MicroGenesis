@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: {{ project_name }}-test
+  {% if database.name %}
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  {% if database.name != "mongodb" %}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  {% endif %}
+  {% endif %}
+
+graphql:
+  packages:
+    - "{{ base_package }}"
+  playground:
+    enabled: true

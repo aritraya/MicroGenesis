@@ -1,0 +1,31 @@
+package {{ base_package }}.interfaces.graphql
+
+import {{ base_package }}.application.dto.SampleEntityDto
+import {{ base_package }}.application.service.SampleEntityApplicationService
+import com.expediagroup.graphql.server.operations.Query
+import org.springframework.stereotype.Component
+import java.util.UUID
+
+/**
+ * GraphQL Query resolver for the {{ project_name }} API.
+ * 
+ * Implements the Query type defined in the GraphQL schema.
+ */
+@Component
+class QueryResolver(
+    private val sampleEntityService: SampleEntityApplicationService
+) : Query {
+    /**
+     * Get a sample entity by ID.
+     */
+    fun getSampleEntity(id: String): SampleEntityDto? {
+        return sampleEntityService.findById(UUID.fromString(id))
+    }
+    
+    /**
+     * Get all sample entities.
+     */
+    fun getAllSampleEntities(): List<SampleEntityDto> {
+        return sampleEntityService.findAll()
+    }
+}

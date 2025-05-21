@@ -1,0 +1,123 @@
+package {{ package_name }}.service;
+
+import {{ package_name }}.entity.{{ entity_name }};
+import {{ package_name }}.repository.{{ entity_name }}Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import javax.persistence.EntityNotFoundException;
+
+/**
+ * Service implementation for {{ entity_name }} entities.
+ */
+@Service
+public class {{ entity_name }}Service {
+
+    private final {{ entity_name }}Repository {{ entity_name | lower }}Repository;
+
+    @Autowired
+    public {{ entity_name }}Service({{ entity_name }}Repository {{ entity_name | lower }}Repository) {
+        this.{{ entity_name | lower }}Repository = {{ entity_name | lower }}Repository;
+    }
+
+    /**
+     * Find all {{ entity_name | lower }} entities.
+     *
+     * @return list of all {{ entity_name | lower }} entities
+     */
+    @Transactional(readOnly = true)
+    public List<{{ entity_name }}> findAll() {
+        return {{ entity_name | lower }}Repository.findAll();
+    }
+
+    /**
+     * Find a {{ entity_name | lower }} by its ID.
+     *
+     * @param {{ id_field_name }} the {{ entity_name | lower }} identifier
+     * @return the found {{ entity_name }}
+     * @throws EntityNotFoundException if the entity is not found
+     */
+    @Transactional(readOnly = true)
+    public {{ entity_name }} findById({{ id_type }} {{ id_field_name }}) {
+        return {{ entity_name | lower }}Repository.findById({{ id_field_name }})
+                .orElseThrow(() -> new EntityNotFoundException("{{ entity_name }} not found with id: " + {{ id_field_name }}));
+    }
+
+    /**
+     * Save a new {{ entity_name | lower }}.
+     *
+     * @param {{ entity_name | lower }} the {{ entity_name | lower }} to save
+     * @return the saved {{ entity_name }}
+     */
+    @Transactional
+    public {{ entity_name }} save({{ entity_name }} {{ entity_name | lower }}) {
+        return {{ entity_name | lower }}Repository.save({{ entity_name | lower }});
+    }
+
+    /**
+     * Update an existing {{ entity_name | lower }}.
+     *
+     * @param {{ entity_name | lower }} the {{ entity_name | lower }} with updated values
+     * @return the updated {{ entity_name }}
+     * @throws EntityNotFoundException if the entity is not found
+     */
+    @Transactional
+    public {{ entity_name }} update({{ entity_name }} {{ entity_name | lower }}) {
+        {{ id_type }} {{ id_field_name }} = {{ entity_name | lower }}.get{{ id_field_name | capitalize }}();
+        
+        if ({{ id_field_name }} == null || !{{ entity_name | lower }}Repository.existsById({{ id_field_name }})) {
+            throw new EntityNotFoundException("Cannot update {{ entity_name | lower }} with id: " + {{ id_field_name }});
+        }
+        
+        return {{ entity_name | lower }}Repository.save({{ entity_name | lower }});
+    }
+
+    /**
+     * Delete a {{ entity_name | lower }} by its ID.
+     *
+     * @param {{ id_field_name }} the {{ entity_name | lower }} identifier
+     * @throws EntityNotFoundException if the entity is not found
+     */
+    @Transactional
+    public void deleteById({{ id_type }} {{ id_field_name }}) {
+        if (!{{ entity_name | lower }}Repository.existsById({{ id_field_name }})) {
+            throw new EntityNotFoundException("Cannot delete {{ entity_name | lower }} with id: " + {{ id_field_name }});
+        }
+        
+        {% if features is defined and features.soft_delete %}
+        {{ entity_name }} {{ entity_name | lower }} = findById({{ id_field_name }});
+        {{ entity_name | lower }}.setDeleted(true);
+        {{ entity_name | lower }}Repository.save({{ entity_name | lower }});
+        {% else %}
+        {{ entity_name | lower }}Repository.deleteById({{ id_field_name }});
+        {% endif %}
+    }
+
+    {% if features is defined and features.soft_delete %}
+    /**
+     * Find all active (not deleted) {{ entity_name | lower }} entities.
+     *
+     * @return list of active {{ entity_name | lower }} entities
+     */
+    @Transactional(readOnly = true)
+    public List<{{ entity_name }}> findAllActive() {
+        return {{ entity_name | lower }}Repository.findByDeletedFalse();
+    }
+    {% endif %}
+
+    {% if features is defined and features.tenant_aware %}
+    /**
+     * Find all {{ entity_name | lower }} entities for a specific tenant.
+     *
+     * @param tenantId the tenant identifier
+     * @return list of {{ entity_name | lower }} entities for the tenant
+     */
+    @Transactional(readOnly = true)
+    public List<{{ entity_name }}> findByTenantId(String tenantId) {
+        return {{ entity_name | lower }}Repository.findByTenantId(tenantId);
+    }
+    {% endif %}
+}

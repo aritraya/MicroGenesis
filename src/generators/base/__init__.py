@@ -18,7 +18,8 @@ class BaseGenerator(ABC):
     
     def __init__(self):
         """Initialize the base generator."""
-        self.logger = get_logger()        # Set up Jinja2 template environment
+        self.logger = get_logger()
+        # Set up Jinja2 template environment
         templates_dir = os.path.join(
             os.path.dirname(__file__), 
             "..", 
@@ -30,6 +31,12 @@ class BaseGenerator(ABC):
             trim_blocks=True,
             lstrip_blocks=True
         )
+        
+        # Add utility functions to templates
+        self.template_env.filters['camelcase'] = self._to_camel_case
+        self.template_env.filters['pascalcase'] = self._to_pascal_case
+        self.template_env.filters['snakecase'] = self._to_snake_case
+        self.template_env.filters['kebabcase'] = self._to_kebab_case
         
     def generate(self, project_dir: str, config: Dict[str, Any]) -> None:
         """Generate a project based on the provided configuration.

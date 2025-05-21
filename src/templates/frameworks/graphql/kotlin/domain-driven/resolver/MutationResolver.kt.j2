@@ -1,0 +1,40 @@
+package {{ base_package }}.interfaces.graphql
+
+import {{ base_package }}.application.dto.CreateSampleEntityInput
+import {{ base_package }}.application.dto.SampleEntityDto
+import {{ base_package }}.application.dto.UpdateSampleEntityInput
+import {{ base_package }}.application.service.SampleEntityApplicationService
+import com.expediagroup.graphql.server.operations.Mutation
+import org.springframework.stereotype.Component
+import java.util.UUID
+
+/**
+ * GraphQL Mutation resolver for the {{ project_name }} API.
+ * 
+ * Implements the Mutation type defined in the GraphQL schema.
+ */
+@Component
+class MutationResolver(
+    private val sampleEntityService: SampleEntityApplicationService
+) : Mutation {
+    /**
+     * Create a new sample entity.
+     */
+    fun createSampleEntity(input: CreateSampleEntityInput): SampleEntityDto {
+        return sampleEntityService.create(input)
+    }
+    
+    /**
+     * Update an existing sample entity.
+     */
+    fun updateSampleEntity(id: String, input: UpdateSampleEntityInput): SampleEntityDto? {
+        return sampleEntityService.update(UUID.fromString(id), input)
+    }
+    
+    /**
+     * Delete a sample entity.
+     */
+    fun deleteSampleEntity(id: String): Boolean {
+        return sampleEntityService.delete(UUID.fromString(id))
+    }
+}

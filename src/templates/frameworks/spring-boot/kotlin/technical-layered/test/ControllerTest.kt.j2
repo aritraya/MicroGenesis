@@ -1,0 +1,247 @@
+package {{ package_name }}.controller
+
+import {{ package_name }}.dto.{{ entity_name }}Dto
+import {{ package_name }}.service.{{ entity_name }}Service
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.Mockito.`when`
+import org.mockito.kotlin.*
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.MediaType
+import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.util.*
+
+@ExtendWith(SpringExtension::class)
+@WebMvcTest({{ entity_name }}Controller::class)
+class {{ entity_name }}ControllerTest {
+
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
+
+    @MockBean
+    private lateinit var {{ entity_name | lower }}Service: {{ entity_name }}Service
+
+    @Test
+    fun `should return all {{ entity_name | lower }}s`() {
+        // Arrange
+        val {{ entity_name | lower }}1 = {{ entity_name }}Dto(
+            id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}1L{% else %}1{% endif %},
+            {% for field in fields %}
+            {{ field.name }} = {% if field.type == "String" %}"test{{ field.name | capitalize }}"{% elif field.type == "Int" or field.type == "Long" %}1{% elif field.type == "Boolean" %}true{% elif field.type == "Double" or field.type == "Float" %}1.0{% elif field.type == "UUID" %}UUID.randomUUID(){% else %}null{% endif %}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        val {{ entity_name | lower }}2 = {{ entity_name }}Dto(
+            id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}2L{% else %}2{% endif %},
+            {% for field in fields %}
+            {{ field.name }} = {% if field.type == "String" %}"test{{ field.name | capitalize }}2"{% elif field.type == "Int" or field.type == "Long" %}2{% elif field.type == "Boolean" %}false{% elif field.type == "Double" or field.type == "Float" %}2.0{% elif field.type == "UUID" %}UUID.randomUUID(){% else %}null{% endif %}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        `when`({{ entity_name | lower }}Service.findAll()).thenReturn(listOf({{ entity_name | lower }}1, {{ entity_name | lower }}2))
+
+        // Act & Assert
+        mockMvc.perform(get("/api/{{ entity_name | lower }}s")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$[1].id").exists())
+                .andExpect(jsonPath("$").isArray)
+                .andExpect(jsonPath("$").value(hasSize(2)))
+
+        verify({{ entity_name | lower }}Service).findAll()
+    }
+
+    @Test
+    fun `should return a {{ entity_name | lower }} by id`() {
+        // Arrange
+        val id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}1L{% else %}1{% endif %}
+        val {{ entity_name | lower }} = {{ entity_name }}Dto(
+            id = id,
+            {% for field in fields %}
+            {{ field.name }} = {% if field.type == "String" %}"test{{ field.name | capitalize }}"{% elif field.type == "Int" or field.type == "Long" %}1{% elif field.type == "Boolean" %}true{% elif field.type == "Double" or field.type == "Float" %}1.0{% elif field.type == "UUID" %}UUID.randomUUID(){% else %}null{% endif %}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        `when`({{ entity_name | lower }}Service.findById(id)).thenReturn({{ entity_name | lower }})
+
+        // Act & Assert
+        mockMvc.perform(get("/api/{{ entity_name | lower }}s/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                {% for field in fields %}
+                {% if field.type == "String" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value("test{{ field.name | capitalize }}"))
+                {% elif field.type == "Int" or field.type == "Long" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(1))
+                {% elif field.type == "Boolean" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(true))
+                {% elif field.type == "Double" or field.type == "Float" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(1.0))
+                {% endif %}
+                {% endfor %}
+
+        verify({{ entity_name | lower }}Service).findById(id)
+    }
+
+    @Test
+    fun `should create a new {{ entity_name | lower }}`() {
+        // Arrange
+        val inputDto = {{ entity_name }}Dto(
+            id = null,
+            {% for field in fields %}
+            {{ field.name }} = {% if field.type == "String" %}"test{{ field.name | capitalize }}"{% elif field.type == "Int" or field.type == "Long" %}1{% elif field.type == "Boolean" %}true{% elif field.type == "Double" or field.type == "Float" %}1.0{% elif field.type == "UUID" %}UUID.randomUUID(){% else %}null{% endif %}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        val savedDto = {{ entity_name }}Dto(
+            id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}1L{% else %}1{% endif %},
+            {% for field in fields %}
+            {{ field.name }} = inputDto.{{ field.name }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        `when`({{ entity_name | lower }}Service.create(any())).thenReturn(savedDto)
+
+        // Act & Assert
+        mockMvc.perform(post("/api/{{ entity_name | lower }}s")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputDto)))
+                .andExpect(status().isCreated)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").exists())
+                {% for field in fields %}
+                {% if field.type == "String" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value("test{{ field.name | capitalize }}"))
+                {% elif field.type == "Int" or field.type == "Long" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(1))
+                {% elif field.type == "Boolean" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(true))
+                {% elif field.type == "Double" or field.type == "Float" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(1.0))
+                {% endif %}
+                {% endfor %}
+
+        verify({{ entity_name | lower }}Service).create(any())
+    }
+
+    @Test
+    fun `should update an existing {{ entity_name | lower }}`() {
+        // Arrange
+        val id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}1L{% else %}1{% endif %}
+        val inputDto = {{ entity_name }}Dto(
+            id = null,
+            {% for field in fields %}
+            {{ field.name }} = {% if field.type == "String" %}"updated{{ field.name | capitalize }}"{% elif field.type == "Int" or field.type == "Long" %}2{% elif field.type == "Boolean" %}false{% elif field.type == "Double" or field.type == "Float" %}2.0{% elif field.type == "UUID" %}UUID.randomUUID(){% else %}null{% endif %}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        val updatedDto = {{ entity_name }}Dto(
+            id = id,
+            {% for field in fields %}
+            {{ field.name }} = inputDto.{{ field.name }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        `when`({{ entity_name | lower }}Service.update(eq(id), any())).thenReturn(updatedDto)
+
+        // Act & Assert
+        mockMvc.perform(put("/api/{{ entity_name | lower }}s/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputDto)))
+                .andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                {% for field in fields %}
+                {% if field.type == "String" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value("updated{{ field.name | capitalize }}"))
+                {% elif field.type == "Int" or field.type == "Long" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(2))
+                {% elif field.type == "Boolean" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(false))
+                {% elif field.type == "Double" or field.type == "Float" %}
+                .andExpect(jsonPath("$.{{ field.name }}").value(2.0))
+                {% endif %}
+                {% endfor %}
+
+        verify({{ entity_name | lower }}Service).update(eq(id), any())
+    }
+
+    @Test
+    fun `should delete a {{ entity_name | lower }}`() {
+        // Arrange
+        val id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}1L{% else %}1{% endif %}
+        doNothing().whenever({{ entity_name | lower }}Service).delete(id)
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/{{ entity_name | lower }}s/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent)
+
+        verify({{ entity_name | lower }}Service).delete(id)
+    }
+
+    {% if features is defined and features.soft_delete %}
+    @Test
+    fun `should return all active {{ entity_name | lower }}s`() {
+        // Arrange
+        val {{ entity_name | lower }}1 = {{ entity_name }}Dto(
+            id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}1L{% else %}1{% endif %},
+            {% for field in fields %}
+            {{ field.name }} = {% if field.type == "String" %}"test{{ field.name | capitalize }}"{% elif field.type == "Int" or field.type == "Long" %}1{% elif field.type == "Boolean" %}true{% elif field.type == "Double" or field.type == "Float" %}1.0{% elif field.type == "UUID" %}UUID.randomUUID(){% else %}null{% endif %}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        `when`({{ entity_name | lower }}Service.findAllActive()).thenReturn(listOf({{ entity_name | lower }}1))
+
+        // Act & Assert
+        mockMvc.perform(get("/api/{{ entity_name | lower }}s/active")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$").isArray)
+                .andExpect(jsonPath("$").value(hasSize(1)))
+
+        verify({{ entity_name | lower }}Service).findAllActive()
+    }
+    {% endif %}
+
+    {% if features is defined and features.tenant_aware %}
+    @Test
+    fun `should return all {{ entity_name | lower }}s for a tenant`() {
+        // Arrange
+        val tenantId = "tenant-123"
+        val {{ entity_name | lower }}1 = {{ entity_name }}Dto(
+            id = {% if id_type == "UUID" %}UUID.randomUUID(){% elif id_type == "Long" %}1L{% else %}1{% endif %},
+            {% for field in fields %}
+            {{ field.name }} = {% if field.type == "String" %}"test{{ field.name | capitalize }}"{% elif field.type == "Int" or field.type == "Long" %}1{% elif field.type == "Boolean" %}true{% elif field.type == "Double" or field.type == "Float" %}1.0{% elif field.type == "UUID" %}UUID.randomUUID(){% else %}null{% endif %}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        )
+        
+        `when`({{ entity_name | lower }}Service.findByTenantId(tenantId)).thenReturn(listOf({{ entity_name | lower }}1))
+
+        // Act & Assert
+        mockMvc.perform(get("/api/{{ entity_name | lower }}s/tenant/{tenantId}", tenantId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$").isArray)
+                .andExpect(jsonPath("$").value(hasSize(1)))
+
+        verify({{ entity_name | lower }}Service).findByTenantId(tenantId)
+    }
+    {% endif %}
+}

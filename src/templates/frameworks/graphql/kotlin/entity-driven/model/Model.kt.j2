@@ -1,0 +1,37 @@
+package {{ base_package }}.model
+
+import java.time.LocalDateTime
+import java.util.UUID
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Table
+
+/**
+ * Sample entity for {{ project_name }}.
+ * 
+ * This is a JPA entity representing a database table.
+ */
+@Entity
+@Table(name = "sample_entities")
+data class SampleEntity(
+    @Id
+    val id: UUID = UUID.randomUUID(),
+    
+    var name: String,
+    
+    var description: String? = null,
+    
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+    
+    var updatedAt: LocalDateTime = LocalDateTime.now()
+) {
+    /**
+     * Update entity properties.
+     */
+    fun update(name: String, description: String?): SampleEntity {
+        this.name = name
+        this.description = description
+        this.updatedAt = LocalDateTime.now()
+        return this
+    }
+}

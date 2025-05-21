@@ -1,0 +1,68 @@
+plugins {
+    id("org.springframework.boot") version "3.1.0"
+    id("io.spring.dependency-management") version "1.1.0"
+    kotlin("jvm") version "{{ kotlin_version }}"
+    kotlin("plugin.spring") version "{{ kotlin_version }}"
+    {% if uses_jpa %}
+    kotlin("plugin.jpa") version "{{ kotlin_version }}"
+    {% endif %}
+}
+
+group = "{{ group_id }}"
+version = "{{ version }}"
+java.sourceCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    {% if database.name == "postgresql" or database.name == "postgres" %}
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.postgresql:postgresql")
+    {% elif database.name == "mysql" %}
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("mysql:mysql-connector-java")
+    {% elif database.name == "mongodb" %}
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+    {% endif %}
+    
+    // GraphQL
+    implementation("com.expediagroup:graphql-kotlin-spring-server:{{ graphql_kotlin_version }}")
+    
+    // Kotlin
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    
+    {% if "swagger" in features %}
+    // Swagger / OpenAPI
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
+    {% endif %}
+    
+    {% if "security" in features %}
+    // Security
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    {% endif %}
+    
+    // Test dependencies
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    {% if "security" in features %}
+    testImplementation("org.springframework.security:spring-security-test")
+    {% endif %}
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs = listOf("-Xjsr305=strict")
+        jvmTarget = "17"
+    }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}

@@ -1,0 +1,182 @@
+package {{ base_package }}.service;
+
+import {{ base_package }}.entity.SampleEntity;
+import {{ base_package }}.repository.SampleEntityRepository;
+{% if has_domain_events is defined and has_domain_events %}
+import {{ base_package }}.domain.event.DomainEventPublisher;
+import {{ base_package }}.domain.event.SampleEntityCreatedEvent;
+import {{ base_package }}.domain.event.SampleEntityUpdatedEvent;
+{% endif %}
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class SampleEntityServiceTest {
+
+    @Mock
+    private SampleEntityRepository repository;
+    
+    private SampleEntityService service;
+    
+    private SampleEntity sampleEntity;
+    private UUID sampleId;
+    
+    @BeforeEach
+    void setUp() {
+        service = new SampleEntityService(repository);
+        
+        sampleId = UUID.randomUUID();
+        sampleEntity = new SampleEntity();
+        sampleEntity.setId(sampleId);
+        sampleEntity.setName("Test Entity");
+        sampleEntity.setDescription("Test Description");
+        sampleEntity.setCreatedAt(LocalDateTime.now());
+        sampleEntity.setUpdatedAt(LocalDateTime.now());
+    }
+    
+    @Test
+    void findAll_ReturnsAllEntities() {
+        // Arrange
+        List<SampleEntity> expected = Arrays.asList(sampleEntity);
+        when(repository.findAll()).thenReturn(expected);
+        
+        // Act
+        List<SampleEntity> actual = service.findAll();
+        
+        // Assert
+        assertEquals(expected, actual);
+        verify(repository).findAll();
+    }
+    
+    @Test
+    void findById_ExistingId_ReturnsEntity() {
+        // Arrange
+        when(repository.findById(sampleId)).thenReturn(Optional.of(sampleEntity));
+        
+        // Act
+        Optional<SampleEntity> actual = service.findById(sampleId);
+        
+        // Assert
+        assertTrue(actual.isPresent());
+        assertEquals(sampleEntity, actual.get());
+        verify(repository).findById(sampleId);
+    }
+    
+    @Test
+    void findById_NonExistingId_ReturnsEmpty() {
+        // Arrange
+        UUID nonExistingId = UUID.randomUUID();
+        when(repository.findById(nonExistingId)).thenReturn(Optional.empty());
+        
+        // Act
+        Optional<SampleEntity> actual = service.findById(nonExistingId);
+        
+        // Assert
+        assertFalse(actual.isPresent());
+        verify(repository).findById(nonExistingId);
+    }
+    
+    @Test
+    void create_ValidEntity_ReturnsCreatedEntity() {
+        // Arrange
+        when(repository.save(any(SampleEntity.class))).thenReturn(sampleEntity);
+        
+        // Act
+        SampleEntity actual = service.create(sampleEntity);
+        
+        // Assert
+        assertEquals(sampleEntity, actual);
+        verify(repository).save(sampleEntity);
+        
+        {% if has_domain_events is defined and has_domain_events %}
+        // Verify domain event was published
+        verify(DomainEventPublisher.class).publish(any(SampleEntityCreatedEvent.class));
+        {% endif %}
+    }
+    
+    @Test
+    void update_ExistingEntity_ReturnsUpdatedEntity() {
+        // Arrange
+        SampleEntity updatedEntity = new SampleEntity();
+        updatedEntity.setName("Updated Name");
+        updatedEntity.setDescription("Updated Description");
+        
+        when(repository.findById(sampleId)).thenReturn(Optional.of(sampleEntity));
+        when(repository.save(any(SampleEntity.class))).thenReturn(sampleEntity);
+        
+        // Act
+        Optional<SampleEntity> actual = service.update(sampleId, updatedEntity);
+        
+        // Assert
+        assertTrue(actual.isPresent());
+        assertEquals("Updated Name", actual.get().getName());
+        assertEquals("Updated Description", actual.get().getDescription());
+        verify(repository).findById(sampleId);
+        verify(repository).save(sampleEntity);
+        
+        {% if has_domain_events is defined and has_domain_events %}
+        // Verify domain event was published
+        verify(DomainEventPublisher.class).publish(any(SampleEntityUpdatedEvent.class));
+        {% endif %}
+    }
+    
+    @Test
+    void update_NonExistingEntity_ReturnsEmpty() {
+        // Arrange
+        UUID nonExistingId = UUID.randomUUID();
+        SampleEntity updatedEntity = new SampleEntity();
+        
+        when(repository.findById(nonExistingId)).thenReturn(Optional.empty());
+        
+        // Act
+        Optional<SampleEntity> actual = service.update(nonExistingId, updatedEntity);
+        
+        // Assert
+        assertFalse(actual.isPresent());
+        verify(repository).findById(nonExistingId);
+        verify(repository, never()).save(any(SampleEntity.class));
+    }
+    
+    @Test
+    void deleteById_ExistingEntity_ReturnsTrue() {
+        // Arrange
+        when(repository.findById(sampleId)).thenReturn(Optional.of(sampleEntity));
+        doNothing().when(repository).delete(any(SampleEntity.class));
+        
+        // Act
+        boolean actual = service.deleteById(sampleId);
+        
+        // Assert
+        assertTrue(actual);
+        verify(repository).findById(sampleId);
+        verify(repository).delete(sampleEntity);
+    }
+    
+    @Test
+    void deleteById_NonExistingEntity_ReturnsFalse() {
+        // Arrange
+        UUID nonExistingId = UUID.randomUUID();
+        when(repository.findById(nonExistingId)).thenReturn(Optional.empty());
+        
+        // Act
+        boolean actual = service.deleteById(nonExistingId);
+        
+        // Assert
+        assertFalse(actual);
+        verify(repository).findById(nonExistingId);
+        verify(repository, never()).delete(any(SampleEntity.class));
+    }
+}

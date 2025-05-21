@@ -1,0 +1,220 @@
+package {{ package_name }}.domain.model;
+
+import {{ package_name }}.domain.event.DomainEvent;
+import {{ package_name }}.domain.event.{{ entity_name }}CreatedEvent;
+import {{ package_name }}.domain.event.{{ entity_name }}UpdatedEvent;
+import {{ package_name }}.domain.valueobject.*;
+
+import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * {{ entity_name }} aggregate root entity in the domain model.
+ */
+@Entity
+@Table(name = "{{ entity_name | lower }}s")
+public class {{ entity_name }} extends AggregateRoot<UUID> {
+
+    @Id
+    @Column(name = "id", nullable = false, updatable = false)
+    private UUID id;
+
+    {% for field in fields %}
+    {% if field.is_value_object %}
+    @Embedded
+    private {{ field.type }} {{ field.name }};
+    {% else %}
+    @Column(name = "{{ field.name | lower }}")
+    private {{ field.type }} {{ field.name }};
+    {% endif %}
+    {% endfor %}
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    {% if features is defined and features.soft_delete %}
+    @Column(name = "deleted")
+    private boolean deleted = false;
+    {% endif %}
+
+    {% if features is defined and features.tenant_aware %}
+    @Column(name = "tenant_id", nullable = false)
+    private String tenantId;
+    {% endif %}
+
+    /**
+     * Default constructor for JPA.
+     */
+    protected {{ entity_name }}() {
+        // Required by JPA
+    }
+
+    /**
+     * Private constructor used by factory methods.
+     */
+    private {{ entity_name }}(UUID id, 
+                         {% for field in fields %}
+                         {{ field.type }} {{ field.name }}{% if not loop.last %}, {% endif %}
+                         {% endfor %}
+                         {% if features is defined and features.tenant_aware %}
+                         {% if fields|length > 0 %}, {% endif %}
+                         String tenantId
+                         {% endif %}
+                         ) {
+        this.id = id;
+        {% for field in fields %}
+        this.{{ field.name }} = {{ field.name }};
+        {% endfor %}
+        {% if features is defined and features.tenant_aware %}
+        this.tenantId = tenantId;
+        {% endif %}
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+        
+        // Register creation event
+        registerEvent(new {{ entity_name }}CreatedEvent(this.id));
+    }
+
+    /**
+     * Factory method to create a new {{ entity_name }}.
+     *
+     * @return a new instance of {{ entity_name }}
+     */
+    public static {{ entity_name }} create(
+            {% for field in fields %}
+            {{ field.type }} {{ field.name }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+            {% if features is defined and features.tenant_aware %}
+            {% if fields|length > 0 %}, {% endif %}
+            String tenantId
+            {% endif %}
+    ) {
+        // Validate business rules
+        {% for field in fields %}
+        {% if field.type == "String" %}
+        if ({{ field.name }} == null || {{ field.name }}.trim().isEmpty()) {
+            throw new IllegalArgumentException("{{ field.name }} cannot be empty");
+        }
+        {% elif field.is_value_object %}
+        if ({{ field.name }} == null) {
+            throw new IllegalArgumentException("{{ field.name }} cannot be null");
+        }
+        {% endif %}
+        {% endfor %}
+        
+        return new {{ entity_name }}(UUID.randomUUID(), 
+                                {% for field in fields %}
+                                {{ field.name }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                                {% if features is defined and features.tenant_aware %}
+                                {% if fields|length > 0 %}, {% endif %}
+                                tenantId
+                                {% endif %}
+                                );
+    }
+
+    /**
+     * Gets the unique identifier for this aggregate.
+     * 
+     * @return the identifier of the aggregate
+     */
+    @Override
+    public UUID getId() {
+        return id;
+    }
+
+    // Getters for all properties
+    {% for field in fields %}
+    public {{ field.type }} get{{ field.name | capitalize }}() {
+        return {{ field.name }};
+    }
+    {% endfor %}
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    {% if features is defined and features.soft_delete %}
+    public boolean isDeleted() {
+        return deleted;
+    }
+    {% endif %}
+
+    {% if features is defined and features.tenant_aware %}
+    public String getTenantId() {
+        return tenantId;
+    }
+    {% endif %}
+
+    // Business methods
+    {% for field in fields %}
+    /**
+     * Updates the {{ field.name }} of the {{ entity_name }}.
+     *
+     * @param {{ field.name }} the new {{ field.name }} value
+     */
+    public void update{{ field.name | capitalize }}({{ field.type }} {{ field.name }}) {
+        {% if field.type == "String" %}
+        if ({{ field.name }} == null || {{ field.name }}.trim().isEmpty()) {
+            throw new IllegalArgumentException("{{ field.name }} cannot be empty");
+        }
+        {% elif field.is_value_object %}
+        if ({{ field.name }} == null) {
+            throw new IllegalArgumentException("{{ field.name }} cannot be null");
+        }
+        {% endif %}
+        
+        this.{{ field.name }} = {{ field.name }};
+        this.updatedAt = LocalDateTime.now();
+        
+        // Register update event
+        registerEvent(new {{ entity_name }}UpdatedEvent(this.id));
+    }
+    {% endfor %}
+
+    {% if features is defined and features.soft_delete %}
+    /**
+     * Marks the {{ entity_name }} as deleted (soft delete).
+     */
+    public void markAsDeleted() {
+        this.deleted = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * Restores a previously deleted {{ entity_name }}.
+     */
+    public void restore() {
+        if (!this.deleted) {
+            return;
+        }
+        
+        this.deleted = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+    {% endif %}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        {{ entity_name }} that = ({{ entity_name }}) o;
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+}

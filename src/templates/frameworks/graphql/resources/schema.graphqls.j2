@@ -1,0 +1,52 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+"Root query operations for {{ project_name }}"
+type Query {
+    "Get a sample entity by ID"
+    getSampleEntity(id: ID!): SampleEntity
+    
+    "Get all sample entities"
+    getAllSampleEntities: [SampleEntity!]!
+}
+
+"Root mutation operations for {{ project_name }}"
+type Mutation {
+    "Create a new sample entity"
+    createSampleEntity(input: SampleEntityInput!): SampleEntity!
+    
+    "Update an existing sample entity"
+    updateSampleEntity(id: ID!, input: SampleEntityInput!): SampleEntity!
+    
+    "Delete a sample entity"
+    deleteSampleEntity(id: ID!): Boolean!
+}
+
+"Sample entity for demonstration"
+type SampleEntity {
+    "Unique identifier"
+    id: ID!
+    
+    "Name of the entity"
+    name: String!
+    
+    "Description of the entity"
+    description: String
+    
+    "Creation timestamp"
+    createdAt: String!
+    
+    "Last update timestamp"
+    updatedAt: String!
+}
+
+"Input type for creating or updating a sample entity"
+input SampleEntityInput {
+    "Name of the entity"
+    name: String!
+    
+    "Description of the entity"
+    description: String
+}

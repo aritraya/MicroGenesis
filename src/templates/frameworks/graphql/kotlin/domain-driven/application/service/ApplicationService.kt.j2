@@ -1,0 +1,98 @@
+package {{ base_package }}.application.service
+
+import {{ base_package }}.application.dto.SampleEntityDto
+import {{ base_package }}.application.dto.CreateSampleEntityInput
+import {{ base_package }}.application.dto.UpdateSampleEntityInput
+import {{ base_package }}.domain.model.SampleEntity
+import {{ base_package }}.domain.repository.SampleEntityRepository
+import org.springframework.stereotype.Service
+import java.util.UUID
+
+/**
+ * Application service for SampleEntity management.
+ * 
+ * This service implements use cases and orchestrates domain operations.
+ */
+@Service
+class SampleEntityApplicationService(
+    private val repository: SampleEntityRepository
+) {
+    /**
+     * Find a sample entity by ID.
+     */
+    fun findById(id: UUID): SampleEntityDto? {
+        return repository.findById(id)?.let { entity ->
+            SampleEntityDto(
+                id = entity.id,
+                name = entity.getName(),
+                description = entity.getDescription(),
+                createdAt = entity.createdAt,
+                updatedAt = entity.getUpdatedAt()
+            )
+        }
+    }
+    
+    /**
+     * Find all sample entities.
+     */
+    fun findAll(): List<SampleEntityDto> {
+        return repository.findAll().map { entity ->
+            SampleEntityDto(
+                id = entity.id,
+                name = entity.getName(),
+                description = entity.getDescription(),
+                createdAt = entity.createdAt,
+                updatedAt = entity.getUpdatedAt()
+            )
+        }
+    }
+    
+    /**
+     * Create a new sample entity.
+     */
+    fun create(input: CreateSampleEntityInput): SampleEntityDto {
+        val entity = SampleEntity.create(
+            name = input.name,
+            description = input.description
+        )
+        
+        val savedEntity = repository.save(entity)
+        
+        return SampleEntityDto(
+            id = savedEntity.id,
+            name = savedEntity.getName(),
+            description = savedEntity.getDescription(),
+            createdAt = savedEntity.createdAt,
+            updatedAt = savedEntity.getUpdatedAt()
+        )
+    }
+    
+    /**
+     * Update an existing sample entity.
+     */
+    fun update(id: UUID, input: UpdateSampleEntityInput): SampleEntityDto? {
+        val entity = repository.findById(id) ?: return null
+        
+        val updatedEntity = entity.update(
+            name = input.name,
+            description = input.description
+        )
+        
+        val savedEntity = repository.save(updatedEntity)
+        
+        return SampleEntityDto(
+            id = savedEntity.id,
+            name = savedEntity.getName(),
+            description = savedEntity.getDescription(),
+            createdAt = savedEntity.createdAt,
+            updatedAt = savedEntity.getUpdatedAt()
+        )
+    }
+    
+    /**
+     * Delete a sample entity.
+     */
+    fun delete(id: UUID): Boolean {
+        return repository.deleteById(id)
+    }
+}

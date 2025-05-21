@@ -1,0 +1,215 @@
+package {{ base_package }}.controller;
+
+import {{ base_package }}.entity.SampleEntity;
+import {{ base_package }}.service.SampleEntityService;
+{% if dto_pattern is defined and dto_pattern %}
+import {{ base_package }}.dto.SampleEntityDto;
+import {{ base_package }}.mapper.SampleEntityMapper;
+{% endif %}
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(SampleEntityController.class)
+class SampleEntityControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+    
+    @MockBean
+    private SampleEntityService service;
+    
+    {% if dto_pattern is defined and dto_pattern %}
+    @MockBean
+    private SampleEntityMapper mapper;
+    {% endif %}
+    
+    private SampleEntity sampleEntity;
+    {% if dto_pattern is defined and dto_pattern %}
+    private SampleEntityDto sampleEntityDto;
+    {% endif %}
+    private UUID sampleId;
+    
+    @BeforeEach
+    void setUp() {
+        sampleId = UUID.randomUUID();
+        
+        sampleEntity = new SampleEntity();
+        sampleEntity.setId(sampleId);
+        sampleEntity.setName("Test Entity");
+        sampleEntity.setDescription("Test Description");
+        sampleEntity.setCreatedAt(LocalDateTime.now());
+        sampleEntity.setUpdatedAt(LocalDateTime.now());
+        
+        {% if dto_pattern is defined and dto_pattern %}
+        sampleEntityDto = new SampleEntityDto(
+            sampleId,
+            "Test Entity",
+            "Test Description",
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        );
+        
+        when(mapper.toDto(any(SampleEntity.class))).thenReturn(sampleEntityDto);
+        when(mapper.toEntity(any(SampleEntityDto.class))).thenReturn(sampleEntity);
+        {% endif %}
+    }
+    
+    @Test
+    void findAll_ReturnsAllEntities() throws Exception {
+        // Arrange
+        when(service.findAll()).thenReturn(Arrays.asList(sampleEntity));
+        
+        // Act & Assert
+        mockMvc.perform(get("/api/sample-entities"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                {% if dto_pattern is defined and dto_pattern %}
+                .andExpect(jsonPath("$[0].id").value(sampleId.toString()))
+                .andExpect(jsonPath("$[0].name").value("Test Entity"));
+                {% else %}
+                .andExpect(jsonPath("$[0].id").value(sampleId.toString()))
+                .andExpect(jsonPath("$[0].name").value("Test Entity"));
+                {% endif %}
+    }
+    
+    @Test
+    void findById_ExistingId_ReturnsEntity() throws Exception {
+        // Arrange
+        when(service.findById(sampleId)).thenReturn(Optional.of(sampleEntity));
+        
+        // Act & Assert
+        mockMvc.perform(get("/api/sample-entities/{id}", sampleId))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                {% if dto_pattern is defined and dto_pattern %}
+                .andExpect(jsonPath("$.id").value(sampleId.toString()))
+                .andExpect(jsonPath("$.name").value("Test Entity"));
+                {% else %}
+                .andExpect(jsonPath("$.id").value(sampleId.toString()))
+                .andExpect(jsonPath("$.name").value("Test Entity"));
+                {% endif %}
+    }
+    
+    @Test
+    void findById_NonExistingId_ReturnsNotFound() throws Exception {
+        // Arrange
+        UUID nonExistingId = UUID.randomUUID();
+        when(service.findById(nonExistingId)).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        mockMvc.perform(get("/api/sample-entities/{id}", nonExistingId))
+                .andExpect(status().isNotFound());
+    }
+    
+    @Test
+    void create_ValidEntity_ReturnsCreatedEntity() throws Exception {
+        // Arrange
+        when(service.create(any(SampleEntity.class))).thenReturn(sampleEntity);
+        
+        // Act & Assert
+        {% if dto_pattern is defined and dto_pattern %}
+        mockMvc.perform(post("/api/sample-entities")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sampleEntityDto)))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(sampleId.toString()))
+                .andExpect(jsonPath("$.name").value("Test Entity"));
+        {% else %}
+        mockMvc.perform(post("/api/sample-entities")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sampleEntity)))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(sampleId.toString()))
+                .andExpect(jsonPath("$.name").value("Test Entity"));
+        {% endif %}
+    }
+    
+    @Test
+    void update_ExistingEntity_ReturnsUpdatedEntity() throws Exception {
+        // Arrange
+        when(service.update(any(UUID.class), any(SampleEntity.class)))
+                .thenReturn(Optional.of(sampleEntity));
+        
+        // Act & Assert
+        {% if dto_pattern is defined and dto_pattern %}
+        mockMvc.perform(put("/api/sample-entities/{id}", sampleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sampleEntityDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(sampleId.toString()))
+                .andExpect(jsonPath("$.name").value("Test Entity"));
+        {% else %}
+        mockMvc.perform(put("/api/sample-entities/{id}", sampleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sampleEntity)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(sampleId.toString()))
+                .andExpect(jsonPath("$.name").value("Test Entity"));
+        {% endif %}
+    }
+    
+    @Test
+    void update_NonExistingEntity_ReturnsNotFound() throws Exception {
+        // Arrange
+        UUID nonExistingId = UUID.randomUUID();
+        when(service.update(any(UUID.class), any(SampleEntity.class)))
+                .thenReturn(Optional.empty());
+        
+        // Act & Assert
+        {% if dto_pattern is defined and dto_pattern %}
+        mockMvc.perform(put("/api/sample-entities/{id}", nonExistingId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sampleEntityDto)))
+                .andExpect(status().isNotFound());
+        {% else %}
+        mockMvc.perform(put("/api/sample-entities/{id}", nonExistingId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sampleEntity)))
+                .andExpect(status().isNotFound());
+        {% endif %}
+    }
+    
+    @Test
+    void delete_ExistingEntity_ReturnsNoContent() throws Exception {
+        // Arrange
+        when(service.deleteById(sampleId)).thenReturn(true);
+        
+        // Act & Assert
+        mockMvc.perform(delete("/api/sample-entities/{id}", sampleId))
+                .andExpect(status().isNoContent());
+    }
+    
+    @Test
+    void delete_NonExistingEntity_ReturnsNotFound() throws Exception {
+        // Arrange
+        UUID nonExistingId = UUID.randomUUID();
+        when(service.deleteById(nonExistingId)).thenReturn(false);
+        
+        // Act & Assert
+        mockMvc.perform(delete("/api/sample-entities/{id}", nonExistingId))
+                .andExpect(status().isNotFound());
+    }
+}

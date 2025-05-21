@@ -1,0 +1,31 @@
+package {{ package_name }}.domain.event
+
+import org.springframework.context.ApplicationEventPublisher
+import org.springframework.stereotype.Component
+
+/**
+ * Default implementation of the DomainEventPublisher using Spring's ApplicationEventPublisher.
+ */
+@Component
+class SpringDomainEventPublisher(
+    private val applicationEventPublisher: ApplicationEventPublisher
+) : DomainEventPublisher {
+
+    /**
+     * Publishes a domain event to all registered listeners.
+     *
+     * @param event The domain event to publish
+     */
+    override fun publish(event: DomainEvent) {
+        applicationEventPublisher.publishEvent(event)
+    }
+    
+    /**
+     * Publishes multiple domain events to all registered listeners.
+     *
+     * @param events The domain events to publish
+     */
+    override fun publishAll(events: Collection<DomainEvent>) {
+        events.forEach { publish(it) }
+    }
+}

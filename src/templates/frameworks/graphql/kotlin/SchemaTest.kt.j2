@@ -1,0 +1,19 @@
+package {{ base_package }}
+
+import com.expediagroup.graphql.server.spring.GraphQLSchemaConfiguration
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+
+@SpringBootTest
+class SchemaTest {
+
+    @Autowired
+    private lateinit var config: GraphQLSchemaConfiguration
+
+    @Test
+    fun `schema generation is valid`() {
+        // This test will fail if there are issues generating the GraphQL schema
+        config.schema
+    }
+}

@@ -1,0 +1,3 @@
+"""GraphQL Kotlin module initialization."""
+
+from src.generators.graphql.kotlin.__init__ import GraphQLKotlinGenerator

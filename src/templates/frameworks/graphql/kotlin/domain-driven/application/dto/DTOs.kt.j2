@@ -1,0 +1,31 @@
+package {{ base_package }}.application.dto
+
+import java.time.LocalDateTime
+import java.util.UUID
+
+/**
+ * Data Transfer Object for SampleEntity.
+ */
+data class SampleEntityDto(
+    val id: UUID,
+    val name: String,
+    val description: String?,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
+)
+
+/**
+ * Input DTO for creating a new SampleEntity.
+ */
+data class CreateSampleEntityInput(
+    val name: String,
+    val description: String?
+)
+
+/**
+ * Input DTO for updating an existing SampleEntity.
+ */
+data class UpdateSampleEntityInput(
+    val name: String,
+    val description: String?
+)

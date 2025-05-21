@@ -1,0 +1,81 @@
+package {{ package_name }}.domain.model;
+
+import {{ package_name }}.domain.event.DomainEvent;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Base class for aggregate roots in the domain model.
+ * An aggregate root is an entity that acts as the entry point to an aggregate,
+ * encapsulating a set of related objects as a single unit.
+ */
+public abstract class AggregateRoot<ID> {
+
+    private ID id;
+    private final List<DomainEvent> domainEvents = new ArrayList<>();
+    
+    /**
+     * Gets the unique identifier for this aggregate.
+     * 
+     * @return the identifier of the aggregate
+     */
+    public ID getId() {
+        return id;
+    }
+    
+    /**
+     * Sets the unique identifier for this aggregate.
+     * 
+     * @param id the identifier of the aggregate
+     */
+    protected void setId(ID id) {
+        this.id = id;
+    }
+    
+    /**
+     * Registers a domain event to be published when the aggregate is persisted.
+     * 
+     * @param domainEvent the domain event to register
+     */
+    protected void registerEvent(DomainEvent domainEvent) {
+        this.domainEvents.add(domainEvent);
+    }
+    
+    /**
+     * Gets all registered domain events and clears the internal list.
+     * 
+     * @return an unmodifiable list of domain events
+     */
+    public List<DomainEvent> getAndClearDomainEvents() {
+        List<DomainEvent> events = Collections.unmodifiableList(this.domainEvents);
+        this.domainEvents.clear();
+        return events;
+    }
+    
+    /**
+     * Checks if the aggregate has registered domain events.
+     * 
+     * @return true if there are domain events, false otherwise
+     */
+    public boolean hasDomainEvents() {
+        return !this.domainEvents.isEmpty();
+    }
+    
+    /**
+     * Gets the current list of domain events without clearing them.
+     * 
+     * @return an unmodifiable list of domain events
+     */
+    public List<DomainEvent> getDomainEvents() {
+        return Collections.unmodifiableList(this.domainEvents);
+    }
+    
+    /**
+     * Clears all registered domain events.
+     */
+    public void clearEvents() {
+        this.domainEvents.clear();
+    }
+}

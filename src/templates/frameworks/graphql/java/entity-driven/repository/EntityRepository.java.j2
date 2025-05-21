@@ -1,0 +1,61 @@
+package {{ package_name }}.repository;
+
+import {{ package_name }}.entity.{{ entity_name }};
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+{% if database_type == "mongodb" %}
+import org.springframework.data.mongodb.repository.MongoRepository;
+{% elif database_type == "postgres" or database_type == "mysql" %}
+import org.springframework.data.jpa.repository.JpaRepository;
+{% elif database_type == "cassandra" %}
+import org.springframework.data.cassandra.repository.CassandraRepository;
+{% endif %}
+{% if use_query_dsl %}
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+{% endif %}
+
+/**
+ * Repository interface for {{ entity_name }} entities.
+ */
+@Repository
+{% if database_type == "mongodb" %}
+public interface {{ entity_name }}Repository extends MongoRepository<{{ entity_name }}, {{ id_type }}> {
+{% elif database_type == "postgres" or database_type == "mysql" %}
+public interface {{ entity_name }}Repository extends JpaRepository<{{ entity_name }}, {{ id_type }}> {
+{% elif database_type == "cassandra" %}
+public interface {{ entity_name }}Repository extends CassandraRepository<{{ entity_name }}, {{ id_type }}> {
+{% else %}
+public interface {{ entity_name }}Repository extends JpaRepository<{{ entity_name }}, {{ id_type }}> {
+{% endif %}
+
+    /**
+     * Find an entity by its unique identifier.
+     *
+     * @param {{ id_field_name }} the identifier
+     * @return the entity if found
+     */
+    {% if database_type == "mongodb" %}
+    {{ entity_name }} findBy{{ id_field_name | capitalize }}({{ id_type }} {{ id_field_name }});
+    {% else %}
+    {{ entity_name }} findBy{{ id_field_name | capitalize }}({{ id_type }} {{ id_field_name }});
+    {% endif %}
+    
+    {% if features is defined and features.soft_delete %}
+    /**
+     * Find all active entities (not deleted).
+     *
+     * @return list of active entities
+     */
+    List<{{ entity_name }}> findByDeletedFalse();
+    {% endif %}
+    
+    {% if features is defined and features.tenant_aware %}
+    /**
+     * Find all entities for a specific tenant.
+     *
+     * @param tenantId the tenant identifier
+     * @return list of entities for the tenant
+     */
+    List<{{ entity_name }}> findByTenantId(String tenantId);
+    {% endif %}
+}
