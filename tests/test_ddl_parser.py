@@ -3,7 +3,7 @@
 import os
 import unittest
 import tempfile
-from microgenesis.generators.schema.ddl_parser import DDLParser
+from src.generators.schema.ddl_parser import DDLParser
 
 class TestDDLParser(unittest.TestCase):
     """Test cases for the DDL parser."""

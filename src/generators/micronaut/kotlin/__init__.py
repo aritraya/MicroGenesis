@@ -5,8 +5,8 @@ import json
 from typing import Dict, List, Any, Optional
 import re
 
-from microgenesis.generators.base import BaseGenerator
-from microgenesis.logging import get_logger
+from src.generators.base import BaseGenerator
+from src.core.logging import get_logger
 
 
 class MicronautKotlinGenerator(BaseGenerator):

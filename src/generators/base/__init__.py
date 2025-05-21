@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional
 from pathlib import Path
 import jinja2
 
-from microgenesis.logging import get_logger
+from src.core.logging import get_logger
 
 logger = get_logger()
 
@@ -18,11 +18,11 @@ class BaseGenerator(ABC):
     
     def __init__(self):
         """Initialize the base generator."""
-        self.logger = get_logger()
-        # Set up Jinja2 template environment
+        self.logger = get_logger()        # Set up Jinja2 template environment
         templates_dir = os.path.join(
             os.path.dirname(__file__), 
             "..", 
+            "..",
             "templates"
         )
         self.template_env = jinja2.Environment(

@@ -1,7 +1,7 @@
 """Unit tests for MongoDB configuration."""
 
 import unittest
-from microgenesis.generators.database.mongodb import MongoDBConfig
+from src.generators.database.mongodb import MongoDBConfig
 
 
 class TestMongoDBConfig(unittest.TestCase):

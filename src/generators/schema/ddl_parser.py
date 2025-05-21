@@ -2,7 +2,7 @@
 
 import re
 from typing import Dict, List, Any, Tuple, Set, Optional
-from core.logging import get_logger
+from src.core.logging import get_logger
 
 logger = get_logger()
 

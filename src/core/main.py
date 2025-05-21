@@ -6,9 +6,9 @@ import os
 import sys
 from typing import Dict, Any, List, Optional
 
-from core.scaffolding import ScaffoldingEngine
-from core.logging import get_logger
-from core.config import Config
+from src.core.scaffolding import ScaffoldingEngine
+from src.core.logging import get_logger
+from src.core.config import Config
 
 logger = get_logger()
 config_manager = Config()
@@ -448,10 +448,9 @@ def main():
     """Run the main application."""
     # Parse command line arguments
     args = parse_arguments()
-    
-    # Show version and exit if requested
+      # Show version and exit if requested
     if args.version:
-        from microgenesis import __version__
+        from src import __version__
         print(f"MicroGenesis version {__version__}")
         return 0
     

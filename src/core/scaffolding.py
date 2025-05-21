@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from core.logging import get_logger
+from src.core.logging import get_logger
 
 logger = get_logger()
 
@@ -22,7 +22,8 @@ class ScaffoldingEngine:
         """
         self.output_dir = output_dir
         self.logger = get_logger()
-          def generate_project(self, config: Dict[str, Any]) -> str:
+        
+    def generate_project(self, config: Dict[str, Any]) -> str:
         """Generate a project based on the provided configuration.
         
         Args:
@@ -49,14 +50,13 @@ class ScaffoldingEngine:
         
         project_dir = os.path.join(self.output_dir, project_name)
         os.makedirs(project_dir, exist_ok=True)
-        
         self.logger.info(f"Project will be generated at: {project_dir}")
         
         # Process DDL file if provided
         entities = []
         if "ddl_file" in config and config["ddl_file"]:
             try:
-                from generators.schema.ddl_parser import DDLParser
+                from src.generators.schema.ddl_parser import DDLParser
                 ddl_parser = DDLParser()
                 ddl_file = config["ddl_file"]
                 self.logger.info(f"Parsing DDL file: {ddl_file}")
@@ -72,7 +72,8 @@ class ScaffoldingEngine:
         
         # Return the path to the generated project
         return project_dir
-      def _get_generator(self, framework: str, language: str):
+        
+    def _get_generator(self, framework: str, language: str):
         """Get the appropriate generator for the framework and language.
         
         Args:
@@ -82,26 +83,30 @@ class ScaffoldingEngine:
         Returns:
             Generator implementation for the specified framework and language
         """
-        # Import generator implementations based on framework and language        if framework == "spring-boot":
+        # Import generator implementations based on framework and language
+        if framework == "spring-boot":
             if language == "java":
-                from generators.spring_boot.java import SpringBootJavaGenerator
+                from src.generators.spring_boot.java import SpringBootJavaGenerator
                 return SpringBootJavaGenerator()
             elif language == "kotlin":
-                from generators.spring_boot.kotlin import SpringBootKotlinGenerator
-                return SpringBootKotlinGenerator()        elif framework == "micronaut":
+                from src.generators.spring_boot.kotlin import SpringBootKotlinGenerator
+                return SpringBootKotlinGenerator()
+        elif framework == "micronaut":
             if language == "java":
-                from generators.micronaut.java import MicronautJavaGenerator
+                from src.generators.micronaut.java import MicronautJavaGenerator
                 return MicronautJavaGenerator()
             elif language == "kotlin":
-                from generators.micronaut.kotlin import MicronautKotlinGenerator
-                return MicronautKotlinGenerator()        elif framework == "graphql":
+                from src.generators.micronaut.kotlin import MicronautKotlinGenerator
+                return MicronautKotlinGenerator()
+        elif framework == "graphql":
             if language == "java":
-                from generators.graphql.java import GraphQLJavaGenerator
+                from src.generators.graphql.java import GraphQLJavaGenerator
                 return GraphQLJavaGenerator()
             elif language == "kotlin":
-                from generators.graphql.kotlin import GraphQLKotlinGenerator
+                from src.generators.graphql.kotlin import GraphQLKotlinGenerator
                 return GraphQLKotlinGenerator()
-          # Default fallback
-        from generators.base import BaseGenerator
+        
+        # Default fallback
+        from src.generators.base import BaseGenerator
         self.logger.warning(f"No specific generator found for {framework}/{language}. Using base generator.")
         return BaseGenerator()

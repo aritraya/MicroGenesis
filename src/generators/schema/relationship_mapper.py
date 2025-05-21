@@ -4,7 +4,7 @@ import os
 import json
 from typing import Dict, List, Any, Optional
 
-from microgenesis.logging import get_logger
+from src.core.logging import get_logger
 
 logger = get_logger()
 

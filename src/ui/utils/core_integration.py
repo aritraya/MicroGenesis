@@ -5,9 +5,9 @@ import json
 from typing import Dict, Any, Optional, List
 
 import streamlit as st
-from core.scaffolding import ScaffoldingEngine
-from core.config import Config
-from core.logging import get_logger
+from src.core.scaffolding import ScaffoldingEngine
+from src.core.config import Config
+from src.core.logging import get_logger
 
 logger = get_logger()
 
@@ -44,7 +44,8 @@ def prepare_config_from_ui(ui_data: Dict[str, Any]) -> Dict[str, Any]:
         
     Returns:
         dict: Configuration in the format expected by the scaffolding engine
-    """    # Extract selections from session state
+    """
+    # Extract selections from session state
     selections = ui_data.get("selections", {})
     
     config = {
@@ -199,10 +200,10 @@ def parse_ddl_file(file_content: str) -> List[Dict[str, Any]]:
         list: List of entity dictionaries
     """
     try:
-        from generators.schema.ddl_parser import DDLParser
+        from src.generators.schema.ddl_parser import DDLParser
         
         parser = DDLParser()
-        entities = parser.parse_ddl_content(file_content)
+        entities = parser.parse_ddl(file_content)
         
         return entities
     except Exception as e:

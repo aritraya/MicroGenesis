@@ -6,7 +6,7 @@ import tempfile
 import shutil
 from unittest.mock import patch
 
-from microgenesis.generators.graphql.java import GraphQLJavaGenerator
+from src.generators.graphql.java import GraphQLJavaGenerator
 
 
 class TestGraphQLJavaGenerator(unittest.TestCase):

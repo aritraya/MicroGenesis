@@ -4,7 +4,7 @@ import unittest
 import tempfile
 import os
 import json
-from microgenesis.generators.schema.relationship_mapper import SchemaRelationshipMapper
+from src.generators.schema.relationship_mapper import SchemaRelationshipMapper
 
 
 class TestSchemaRelationshipMapper(unittest.TestCase):

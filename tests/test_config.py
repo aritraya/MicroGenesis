@@ -5,7 +5,7 @@ import unittest
 import tempfile
 import json
 import yaml
-from microgenesis.config import Config
+from src.core.config import Config
 
 # Add this line for debugging
 print("Starting test_config.py tests...")
