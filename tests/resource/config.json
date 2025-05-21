@@ -1,0 +1,101 @@
+{
+  "project_name": "MicroGenesisDemo",
+  "base_package": "com.example.microgenesis",
+  "description": "A demonstration project for MicroGenesis end-to-end testing",
+  
+  "framework": "spring-boot",
+  "framework_version": "3.2.0",
+  
+  "language": "java",
+  "language_version": "17",
+  
+  "build_system": "maven",
+  
+  "database": "postgresql",
+  
+  "features": [
+    "logging",
+    "swagger",
+    "data",
+    "config",
+    "yaml-config",
+    "generate-dtos"
+  ],
+  
+  "pipeline": "github-actions",
+  
+  "output_dir": "./generated-output",
+  
+  "service_architectures": [
+    {
+      "name": "domain-driven",
+      "service_type": "domain-driven",
+      "ddl_file": "tests/resource/domain_driven/schema.sql",
+      "schema_mapping": "tests/resource/domain_driven/schema_mapping.json",
+      "swagger_file": "tests/resource/domain_driven/swagger.yaml",
+      "output_subdir": "domain-driven-service"
+    },
+    {
+      "name": "entity-driven",
+      "service_type": "entity-driven",
+      "ddl_file": "tests/resource/entity_driven/schema.sql",
+      "schema_mapping": "tests/resource/entity_driven/schema_mapping.json",
+      "swagger_file": "tests/resource/entity_driven/swagger.yaml",
+      "output_subdir": "entity-driven-service"
+    },
+    {
+      "name": "data-driven",
+      "service_type": "data-driven",
+      "ddl_file": "tests/resource/data_driven/schema.sql",
+      "schema_mapping": "tests/resource/data_driven/schema_mapping.json",
+      "swagger_file": "tests/resource/data_driven/swagger.yaml",
+      "output_subdir": "data-driven-service"
+    },
+    {
+      "name": "technical-layered",
+      "service_type": "technical-layered",
+      "ddl_file": "tests/resource/technical_layered/schema.sql",
+      "schema_mapping": "tests/resource/technical_layered/schema_mapping.json",
+      "swagger_file": "tests/resource/technical_layered/swagger.yaml",
+      "output_subdir": "technical-layered-service"
+    },
+    {
+      "name": "function-oriented",
+      "service_type": "function-oriented",
+      "ddl_file": "tests/resource/function_oriented/schema.sql",
+      "schema_mapping": "tests/resource/function_oriented/schema_mapping.json",
+      "swagger_file": "tests/resource/function_oriented/swagger.yaml",
+      "output_subdir": "function-oriented-service"
+    }
+  ],
+  
+  "test_options": {
+    "run_all_architectures": true,
+    "skip_failed": false,
+    "generate_reports": true,
+    "report_dir": "./test-reports"
+  },
+  
+  "additional_settings": {
+    "entity_naming": {
+      "use_plurals": true,
+      "capitalize_first": true
+    },
+    "api_settings": {
+      "base_path": "/api/v1",
+      "include_actuator": true,
+      "generate_exception_handlers": true
+    },
+    "database_settings": {
+      "schema_name": "microgenesis",
+      "connection_pool_size": 10,
+      "include_migrations": true,
+      "migration_tool": "flyway"
+    },
+    "code_style": {
+      "indent_size": 4,
+      "max_line_length": 120,
+      "use_lombok": true
+    }
+  }
+}

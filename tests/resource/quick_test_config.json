@@ -1,0 +1,28 @@
+{
+  "project_name": "MicroGenesisQuickTest",
+  "base_package": "com.example.quicktest",
+  "description": "A quick test for MicroGenesis backend",
+  
+  "framework": "spring-boot",
+  "framework_version": "3.2.0",
+  
+  "language": "java",
+  "language_version": "17",
+  
+  "build_system": "maven",
+  
+  "database": "postgresql",
+  
+  "features": [
+    "logging",
+    "swagger",
+    "data"
+  ],
+  
+  "service_type": "domain-driven",
+  "ddl_file": "tests/resource/domain_driven_schema.sql",
+  "schema_mapping": "tests/resource/domain_driven_schema_mapping.json",
+  "swagger_file": "tests/resource/domain_driven_service.yaml",
+  
+  "output_dir": "./quick-test-output"
+}
