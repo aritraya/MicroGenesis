@@ -2,7 +2,16 @@
 
 MicroGenesis is a powerful code scaffolding tool that generates application code based on user specifications. It allows users to quickly generate project structures for various frameworks like Spring Boot, Micronaut, and GraphQL with customizable configurations.
 
+![MicroGenesis UI](https://via.placeholder.com/800x450.png?text=MicroGenesis+UI)
+
 ## Features
+
+### Modern Streamlit UI
+- Graphical interface for configuring and generating projects
+- Visual entity designer for data modeling
+- Drag-and-drop relationship mapping
+- DDL import for database schemas
+- Project history and quick access to recent projects
 
 - Generate project structures for Spring Boot, Micronaut, and GraphQL
 - Support for multiple languages (Java, Kotlin)
@@ -18,12 +27,30 @@ MicroGenesis is a powerful code scaffolding tool that generates application code
 ## Installation
 
 ```bash
+# Install the package
 pip install -e .
+
+# Install UI dependencies
+pip install streamlit>=1.27.0
 ```
 
 ## Usage
 
-### Interactive Mode
+### Graphical UI (Recommended)
+
+The fastest way to get started is using the graphical UI:
+
+```powershell
+# On Windows, simply run:
+.\run_ui.bat
+
+# Alternatively:
+python setup_ui.py --run
+```
+
+This will open the MicroGenesis UI in your default browser. See [UI Documentation](docs/UI_DOCUMENTATION.md) for details.
+
+### Interactive Mode (Command Line)
 
 ```bash
 python -m microgenesis.main --interactive
