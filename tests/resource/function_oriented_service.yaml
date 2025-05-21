@@ -1,0 +1,1309 @@
+# filepath: tests/resource/function_oriented_service.yaml
+openapi: 3.0.3
+info:
+  title: Function-Oriented Content Management System API
+  description: |
+    A Content Management System API designed with a Function-Oriented approach.
+    This API focuses on stateless functions with minimal dependencies, organized 
+    around operations rather than data or entities.
+  version: 1.0.0
+  contact:
+    name: MicroGenesis Team
+    url: https://github.com/microgenesis/microgenesis
+tags:
+  - name: Content Management
+    description: Content creation and management operations
+  - name: Media Processing
+    description: Media transformation and processing operations
+  - name: Publishing
+    description: Content publishing and delivery operations
+  - name: Authentication
+    description: Authentication and authorization operations
+  - name: Analytics
+    description: Content analytics and reporting operations
+  - name: Utilities
+    description: Utility operations
+
+paths:
+  /api/v1/auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Generate authentication token
+      description: Provides an authentication token for subsequent API calls
+      operationId: generateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                clientId:
+                  type: string
+              required:
+                - username
+                - password
+                - clientId
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Insufficient permissions
+
+  /api/v1/auth/token/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh authentication token
+      description: Generates a new access token using a refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          description: Invalid refresh token
+
+  /api/v1/auth/validate:
+    post:
+      tags:
+        - Authentication
+      summary: Validate token
+      description: Validates if a token is still valid and returns associated permissions
+      operationId: validateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required:
+                - token
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  permissions:
+                    type: array
+                    items:
+                      type: string
+                      example: ["content:read", "content:write"]
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Invalid or expired token
+
+  /api/v1/content/create:
+    post:
+      tags:
+        - Content Management
+      summary: Create content
+      description: Creates a new piece of content in the CMS
+      operationId: createContent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentInput'
+      responses:
+        '201':
+          description: Content created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentOutput'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+
+  /api/v1/content/update:
+    post:
+      tags:
+        - Content Management
+      summary: Update content
+      description: Updates an existing piece of content
+      operationId: updateContent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    contentId:
+                      type: string
+                      format: uuid
+                  required:
+                    - contentId
+                - $ref: '#/components/schemas/ContentInput'
+      responses:
+        '200':
+          description: Content updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentOutput'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+        '404':
+          description: Content not found
+
+  /api/v1/content/get:
+    post:
+      tags:
+        - Content Management
+      summary: Get content
+      description: Retrieves a piece of content by ID
+      operationId: getContent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+                version:
+                  type: string
+                  description: Version to retrieve, defaults to latest
+              required:
+                - contentId
+      responses:
+        '200':
+          description: Content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentOutput'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Content not found
+
+  /api/v1/content/delete:
+    post:
+      tags:
+        - Content Management
+      summary: Delete content
+      description: Deletes a piece of content by ID
+      operationId: deleteContent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+                hardDelete:
+                  type: boolean
+                  description: If true, permanently deletes; if false, marks as deleted
+                  default: false
+              required:
+                - contentId
+      responses:
+        '200':
+          description: Content deleted successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+        '404':
+          description: Content not found
+
+  /api/v1/content/search:
+    post:
+      tags:
+        - Content Management
+      summary: Search content
+      description: Searches for content based on various criteria
+      operationId: searchContent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: Full-text search query
+                tags:
+                  type: array
+                  items:
+                    type: string
+                status:
+                  type: string
+                  enum: [DRAFT, PUBLISHED, ARCHIVED, SCHEDULED]
+                contentType:
+                  type: string
+                  enum: [ARTICLE, BLOG, PAGE, PRODUCT, NEWS]
+                createdAfter:
+                  type: string
+                  format: date-time
+                createdBefore:
+                  type: string
+                  format: date-time
+                authorId:
+                  type: string
+                  format: uuid
+                pagination:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                      default: 0
+                    size:
+                      type: integer
+                      default: 10
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  size:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContentSummary'
+        '400':
+          description: Invalid search parameters
+        '401':
+          description: Unauthorized
+
+  /api/v1/content/version/list:
+    post:
+      tags:
+        - Content Management
+      summary: List content versions
+      description: Lists all versions of a specific content item
+      operationId: listContentVersions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+              required:
+                - contentId
+      responses:
+        '200':
+          description: List of content versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    versionId:
+                      type: string
+                    versionNumber:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                    createdBy:
+                      type: string
+                    comment:
+                      type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: Content not found
+
+  /api/v1/content/version/compare:
+    post:
+      tags:
+        - Content Management
+      summary: Compare content versions
+      description: Compares two versions of a content item
+      operationId: compareContentVersions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+                sourceVersion:
+                  type: string
+                targetVersion:
+                  type: string
+              required:
+                - contentId
+                - sourceVersion
+                - targetVersion
+      responses:
+        '200':
+          description: Version comparison result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contentId:
+                    type: string
+                    format: uuid
+                  sourceVersion:
+                    type: string
+                  targetVersion:
+                    type: string
+                  differences:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                        sourceValue:
+                          type: object
+                        targetValue:
+                          type: object
+                        changeType:
+                          type: string
+                          enum: [ADDED, REMOVED, MODIFIED]
+        '401':
+          description: Unauthorized
+        '404':
+          description: Content or versions not found
+
+  /api/v1/media/upload:
+    post:
+      tags:
+        - Media Processing
+      summary: Upload media file
+      description: Uploads a media file to be used in content
+      operationId: uploadMedia
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                metadata:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    altText:
+                      type: string
+                    description:
+                      type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+              required:
+                - file
+      responses:
+        '200':
+          description: Media uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaOutput'
+        '400':
+          description: Invalid file format or size
+        '401':
+          description: Unauthorized
+        '413':
+          description: File too large
+
+  /api/v1/media/transform:
+    post:
+      tags:
+        - Media Processing
+      summary: Transform media
+      description: Transforms a media file (resize, crop, format conversion)
+      operationId: transformMedia
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mediaId:
+                  type: string
+                  format: uuid
+                transformations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [RESIZE, CROP, FORMAT_CONVERSION, COMPRESSION, FILTER]
+                      params:
+                        type: object
+                        additionalProperties: true
+              required:
+                - mediaId
+                - transformations
+      responses:
+        '200':
+          description: Media transformed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaOutput'
+        '400':
+          description: Invalid transformation parameters
+        '401':
+          description: Unauthorized
+        '404':
+          description: Media not found
+
+  /api/v1/media/optimize:
+    post:
+      tags:
+        - Media Processing
+      summary: Optimize media
+      description: Optimizes media for web delivery while maintaining quality
+      operationId: optimizeMedia
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mediaId:
+                  type: string
+                  format: uuid
+                targetFormat:
+                  type: string
+                  enum: [WEBP, AVIF, JPEG, PNG]
+                quality:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 80
+                maxWidth:
+                  type: integer
+                responsive:
+                  type: boolean
+                  default: false
+                stripMetadata:
+                  type: boolean
+                  default: true
+              required:
+                - mediaId
+      responses:
+        '200':
+          description: Media optimized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaOutput'
+        '400':
+          description: Invalid optimization parameters
+        '401':
+          description: Unauthorized
+        '404':
+          description: Media not found
+
+  /api/v1/publish/schedule:
+    post:
+      tags:
+        - Publishing
+      summary: Schedule content publishing
+      description: Schedules a content item for future publishing
+      operationId: scheduleContentPublishing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+                publishDate:
+                  type: string
+                  format: date-time
+                channels:
+                  type: array
+                  items:
+                    type: string
+                expirationDate:
+                  type: string
+                  format: date-time
+              required:
+                - contentId
+                - publishDate
+      responses:
+        '200':
+          description: Content scheduled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scheduleId:
+                    type: string
+                    format: uuid
+                  contentId:
+                    type: string
+                    format: uuid
+                  publishDate:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+                    enum: [SCHEDULED]
+        '400':
+          description: Invalid scheduling parameters
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+        '404':
+          description: Content not found
+
+  /api/v1/publish/now:
+    post:
+      tags:
+        - Publishing
+      summary: Publish content immediately
+      description: Publishes content immediately across specified channels
+      operationId: publishContentImmediately
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+                channels:
+                  type: array
+                  items:
+                    type: string
+                notifySubscribers:
+                  type: boolean
+                  default: false
+              required:
+                - contentId
+      responses:
+        '200':
+          description: Content published successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publishId:
+                    type: string
+                    format: uuid
+                  contentId:
+                    type: string
+                    format: uuid
+                  publishDate:
+                    type: string
+                    format: date-time
+                  channels:
+                    type: array
+                    items:
+                      type: string
+                  status:
+                    type: string
+                    enum: [PUBLISHED]
+        '400':
+          description: Invalid publishing parameters
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+        '404':
+          description: Content not found
+
+  /api/v1/publish/unpublish:
+    post:
+      tags:
+        - Publishing
+      summary: Unpublish content
+      description: Removes published content from specified channels
+      operationId: unpublishContent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+                channels:
+                  type: array
+                  items:
+                    type: string
+                  description: If not specified, unpublishes from all channels
+              required:
+                - contentId
+      responses:
+        '200':
+          description: Content unpublished successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+        '404':
+          description: Content not found or not published
+
+  /api/v1/analytics/content/performance:
+    post:
+      tags:
+        - Analytics
+      summary: Get content performance metrics
+      description: Retrieves performance metrics for a specific content item
+      operationId: getContentPerformanceMetrics
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contentId:
+                  type: string
+                  format: uuid
+                dateRange:
+                  type: object
+                  properties:
+                    startDate:
+                      type: string
+                      format: date
+                    endDate:
+                      type: string
+                      format: date
+                  required:
+                    - startDate
+                    - endDate
+                metrics:
+                  type: array
+                  items:
+                    type: string
+                    enum: [VIEWS, ENGAGEMENT_TIME, BOUNCE_RATE, CONVERSION_RATE, SHARES, COMMENTS]
+              required:
+                - contentId
+      responses:
+        '200':
+          description: Content performance metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentPerformance'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Content not found
+
+  /api/v1/analytics/audience/overview:
+    post:
+      tags:
+        - Analytics
+      summary: Get audience overview
+      description: Retrieves audience metrics across all content
+      operationId: getAudienceOverview
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dateRange:
+                  type: object
+                  properties:
+                    startDate:
+                      type: string
+                      format: date
+                    endDate:
+                      type: string
+                      format: date
+                  required:
+                    - startDate
+                    - endDate
+                segments:
+                  type: array
+                  items:
+                    type: string
+                    enum: [DEVICE, LOCATION, REFERRER, NEW_RETURNING]
+              required:
+                - dateRange
+      responses:
+        '200':
+          description: Audience overview metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: integer
+                  totalSessions:
+                    type: integer
+                  avgSessionDuration:
+                    type: number
+                    format: float
+                  bounceRate:
+                    type: number
+                    format: float
+                  segments:
+                    type: object
+                    additionalProperties:
+                      type: object
+        '401':
+          description: Unauthorized
+
+  /api/v1/utils/markdown/render:
+    post:
+      tags:
+        - Utilities
+      summary: Render markdown
+      description: Renders markdown text to HTML
+      operationId: renderMarkdown
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                markdown:
+                  type: string
+                options:
+                  type: object
+                  properties:
+                    safeMode:
+                      type: boolean
+                      default: true
+                    enableHighlighting:
+                      type: boolean
+                      default: false
+                    allowHtml:
+                      type: boolean
+                      default: false
+              required:
+                - markdown
+      responses:
+        '200':
+          description: Rendered HTML
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  html:
+                    type: string
+        '400':
+          description: Invalid markdown
+        '401':
+          description: Unauthorized
+
+  /api/v1/utils/html/sanitize:
+    post:
+      tags:
+        - Utilities
+      summary: Sanitize HTML
+      description: Sanitizes HTML content to remove unsafe elements
+      operationId: sanitizeHtml
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                html:
+                  type: string
+                options:
+                  type: object
+                  properties:
+                    allowedTags:
+                      type: array
+                      items:
+                        type: string
+                    allowedAttributes:
+                      type: object
+                      additionalProperties:
+                        type: array
+                        items:
+                          type: string
+                    allowedClasses:
+                      type: object
+                      additionalProperties:
+                        type: array
+                        items:
+                          type: string
+              required:
+                - html
+      responses:
+        '200':
+          description: Sanitized HTML
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  html:
+                    type: string
+        '400':
+          description: Invalid HTML
+        '401':
+          description: Unauthorized
+
+  /api/v1/utils/url/shorten:
+    post:
+      tags:
+        - Utilities
+      summary: Create shortened URL
+      description: Creates a shortened URL for content sharing
+      operationId: shortenUrl
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                customSlug:
+                  type: string
+                expiresAt:
+                  type: string
+                  format: date-time
+              required:
+                - url
+      responses:
+        '200':
+          description: Shortened URL created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  originalUrl:
+                    type: string
+                    format: uri
+                  shortUrl:
+                    type: string
+                    format: uri
+                  slug:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  visitCount:
+                    type: integer
+                    default: 0
+        '400':
+          description: Invalid URL
+        '401':
+          description: Unauthorized
+        '409':
+          description: Custom slug already in use
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthToken:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+          description: Expiration time in seconds
+        permissions:
+          type: array
+          items:
+            type: string
+
+    ContentInput:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        contentType:
+          type: string
+          enum: [ARTICLE, BLOG, PAGE, PRODUCT, NEWS]
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, ARCHIVED, SCHEDULED]
+          default: DRAFT
+        locale:
+          type: string
+          default: en-US
+        metadata:
+          type: object
+          properties:
+            description:
+              type: string
+            keywords:
+              type: array
+              items:
+                type: string
+            featuredImage:
+              type: string
+              format: uuid
+            author:
+              type: string
+            canonical:
+              type: string
+              format: uri
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+                enum: [TEXT, IMAGE, VIDEO, GALLERY, RICH_TEXT, EMBED, PRODUCT_LISTING]
+              content:
+                type: object
+                additionalProperties: true
+              settings:
+                type: object
+                additionalProperties: true
+        tags:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - contentType
+        - sections
+
+    ContentOutput:
+      allOf:
+        - $ref: '#/components/schemas/ContentInput'
+        - type: object
+          properties:
+            contentId:
+              type: string
+              format: uuid
+            version:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            createdBy:
+              type: string
+            updatedBy:
+              type: string
+            publishedAt:
+              type: string
+              format: date-time
+            url:
+              type: string
+              format: uri
+
+    ContentSummary:
+      type: object
+      properties:
+        contentId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        slug:
+          type: string
+        contentType:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        author:
+          type: string
+        featuredImage:
+          type: string
+          format: uri
+        excerpt:
+          type: string
+
+    MediaOutput:
+      type: object
+      properties:
+        mediaId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          description: Size in bytes
+        width:
+          type: integer
+          description: Width in pixels (for images and videos)
+        height:
+          type: integer
+          description: Height in pixels (for images and videos)
+        duration:
+          type: number
+          description: Duration in seconds (for audio and video)
+        url:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+        metadata:
+          type: object
+          properties:
+            title:
+              type: string
+            altText:
+              type: string
+            description:
+              type: string
+            tags:
+              type: array
+              items:
+                type: string
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              variantName:
+                type: string
+              width:
+                type: integer
+              height:
+                type: integer
+              format:
+                type: string
+              size:
+                type: integer
+              url:
+                type: string
+                format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContentPerformance:
+      type: object
+      properties:
+        contentId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        dateRange:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+        metrics:
+          type: object
+          properties:
+            views:
+              type: object
+              properties:
+                total:
+                  type: integer
+                unique:
+                  type: integer
+                trend:
+                  type: string
+                  enum: [INCREASING, DECREASING, STABLE]
+                timeSeriesData:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                        format: date
+                      value:
+                        type: integer
+            engagementTime:
+              type: object
+              properties:
+                avgSeconds:
+                  type: number
+                  format: float
+                trend:
+                  type: string
+                  enum: [INCREASING, DECREASING, STABLE]
+            bounceRate:
+              type: number
+              format: float
+            conversionRate:
+              type: number
+              format: float
+            shares:
+              type: object
+              properties:
+                total:
+                  type: integer
+                byPlatform:
+                  type: object
+                  additionalProperties:
+                    type: integer
+            comments:
+              type: integer
+        demographics:
+          type: object
+          properties:
+            deviceType:
+              type: object
+              additionalProperties:
+                type: integer
+            location:
+              type: object
+              additionalProperties:
+                type: integer
+            referrer:
+              type: object
+              additionalProperties:
+                type: integer

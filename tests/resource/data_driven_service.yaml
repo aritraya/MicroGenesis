@@ -1,0 +1,825 @@
+# filepath: tests/resource/data_driven_service.yaml
+openapi: 3.0.3
+info:
+  title: Data-Driven Healthcare Analytics API
+  description: |
+    A Healthcare Analytics API designed with a Data-Driven approach.
+    This API prioritizes data models, data flows, and data transformations.
+    The architecture is built around data pipelines, analytics operations, 
+    and reporting capabilities.
+  version: 1.0.0
+  contact:
+    name: MicroGenesis Team
+    url: https://github.com/microgenesis/microgenesis
+tags:
+  - name: Patient Data
+    description: Patient data operations and analytics
+  - name: Clinical Metrics
+    description: Clinical metrics analysis and reporting
+  - name: Population Health
+    description: Population health data analysis
+  - name: Treatment Outcomes
+    description: Treatment outcome data analysis
+  - name: Resource Utilization
+    description: Resource utilization analytics
+  - name: Data Pipeline
+    description: Data transformation and pipeline management
+
+paths:
+  /api/v1/data/patients:
+    get:
+      tags:
+        - Patient Data
+      summary: Get patient dataset
+      description: Retrieve patient records with filtering and pagination
+      operationId: getPatientData
+      parameters:
+        - name: age
+          in: query
+          description: Filter by age range
+          schema:
+            type: string
+            example: "18-65"
+        - name: condition
+          in: query
+          description: Filter by medical condition
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalPatients:
+                    type: integer
+                  page:
+                    type: integer
+                  size:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientData'
+        '400':
+          description: Invalid parameters
+        '403':
+          description: Data access forbidden
+    post:
+      tags:
+        - Patient Data
+      summary: Bulk import patient data
+      description: Import multiple patient records from a data source
+      operationId: importPatientData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source:
+                  type: string
+                  enum: [CSV, JSON, HL7, FHIR]
+                dataUrl:
+                  type: string
+                  format: uri
+                mappingConfig:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Data import job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataImportJob'
+        '400':
+          description: Invalid data source or configuration
+
+  /api/v1/data/patients/{patientId}/timeline:
+    get:
+      tags:
+        - Patient Data
+      summary: Get patient timeline data
+      description: Retrieve chronological data for a specific patient
+      operationId: getPatientTimeline
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dataTypes
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [VITALS, LAB_RESULTS, MEDICATIONS, PROCEDURES, DIAGNOSES]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patientId:
+                    type: string
+                  timelineEvents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimelineEvent'
+        '404':
+          description: Patient not found
+
+  /api/v1/analytics/clinical-metrics:
+    get:
+      tags:
+        - Clinical Metrics
+      summary: Get clinical metrics analysis
+      description: Retrieve statistics and trends for selected clinical metrics
+      operationId: getClinicalMetrics
+      parameters:
+        - name: metrics
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [READMISSION_RATE, LENGTH_OF_STAY, INFECTION_RATE, MORTALITY_RATE]
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY]
+            default: MONTHLY
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: departmentId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metricResults:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MetricAnalysis'
+                  aggregatedResults:
+                    type: object
+                    additionalProperties:
+                      type: number
+        '400':
+          description: Invalid metric parameters
+
+  /api/v1/analytics/population-health:
+    post:
+      tags:
+        - Population Health
+      summary: Run population health analysis
+      description: Perform analysis on population health data with specific parameters
+      operationId: analyzePopulationHealth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                demographicFilters:
+                  type: object
+                  properties:
+                    ageGroups:
+                      type: array
+                      items:
+                        type: string
+                    genders:
+                      type: array
+                      items:
+                        type: string
+                    zipCodes:
+                      type: array
+                      items:
+                        type: string
+                    ethnicities:
+                      type: array
+                      items:
+                        type: string
+                analysisParameters:
+                  type: object
+                  properties:
+                    conditions:
+                      type: array
+                      items:
+                        type: string
+                    riskFactors:
+                      type: array
+                      items:
+                        type: string
+                    preventativeMeasures:
+                      type: array
+                      items:
+                        type: string
+      responses:
+        '200':
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulationHealthAnalysis'
+
+  /api/v1/analytics/treatment-outcomes:
+    post:
+      tags:
+        - Treatment Outcomes
+      summary: Analyze treatment outcomes
+      description: Perform comparative analysis of treatment outcomes
+      operationId: analyzeTreatmentOutcomes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                condition:
+                  type: string
+                  description: Medical condition to analyze
+                treatments:
+                  type: array
+                  items:
+                    type: string
+                  description: List of treatments to compare
+                outcomeMetrics:
+                  type: array
+                  items:
+                    type: string
+                    enum: [RECOVERY_TIME, SYMPTOM_REDUCTION, SIDE_EFFECTS, RECURRENCE, COST_EFFECTIVENESS]
+                patientSegmentation:
+                  type: object
+                  properties:
+                    ageRange:
+                      type: string
+                    comorbidities:
+                      type: array
+                      items:
+                        type: string
+                    riskProfiles:
+                      type: array
+                      items:
+                        type: string
+      responses:
+        '200':
+          description: Treatment outcome analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TreatmentOutcomeAnalysis'
+        '400':
+          description: Invalid analysis parameters
+
+  /api/v1/analytics/resource-utilization:
+    get:
+      tags:
+        - Resource Utilization
+      summary: Get resource utilization data
+      description: Analyze resource utilization across the healthcare system
+      operationId: getResourceUtilization
+      parameters:
+        - name: resourceType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [STAFF, BEDS, EQUIPMENT, OPERATING_ROOMS, MEDICATIONS]
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [DAILY, WEEKLY, MONTHLY]
+            default: DAILY
+        - name: facility
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Resource utilization analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceUtilizationAnalysis'
+
+  /api/v1/data-pipeline/jobs:
+    post:
+      tags:
+        - Data Pipeline
+      summary: Create data processing job
+      description: Create a new data processing pipeline job
+      operationId: createDataPipelineJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataPipelineJob'
+      responses:
+        '202':
+          description: Job created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [QUEUED, RUNNING, COMPLETED, FAILED]
+                  estimatedCompletion:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid job configuration
+
+  /api/v1/data-pipeline/jobs/{jobId}:
+    get:
+      tags:
+        - Data Pipeline
+      summary: Get data processing job status
+      description: Retrieve the status and results of a data processing job
+      operationId: getDataPipelineJobStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status and results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [QUEUED, RUNNING, COMPLETED, FAILED]
+                  progress:
+                    type: integer
+                    format: int32
+                    minimum: 0
+                    maximum: 100
+                  result:
+                    type: object
+                    nullable: true
+                  error:
+                    type: string
+                    nullable: true
+        '404':
+          description: Job not found
+
+components:
+  schemas:
+    PatientData:
+      type: object
+      properties:
+        patientId:
+          type: string
+        basicDemographics:
+          $ref: '#/components/schemas/Demographics'
+        clinicalData:
+          $ref: '#/components/schemas/ClinicalData'
+        insuranceData:
+          $ref: '#/components/schemas/InsuranceData'
+        visits:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisitSummary'
+
+    Demographics:
+      type: object
+      properties:
+        age:
+          type: integer
+          format: int32
+        gender:
+          type: string
+        ethnicity:
+          type: string
+        zipCode:
+          type: string
+        maritalStatus:
+          type: string
+        occupation:
+          type: string
+
+    ClinicalData:
+      type: object
+      properties:
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Condition'
+        allergies:
+          type: array
+          items:
+            type: string
+        medications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Medication'
+        vaccinations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vaccination'
+        labResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabResult'
+
+    Condition:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        diagnosisDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [ACTIVE, RESOLVED, RECURRING]
+
+    Medication:
+      type: object
+      properties:
+        name:
+          type: string
+        dosage:
+          type: string
+        frequency:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+
+    Vaccination:
+      type: object
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+        manufacturer:
+          type: string
+        lotNumber:
+          type: string
+
+    LabResult:
+      type: object
+      properties:
+        testName:
+          type: string
+        testDate:
+          type: string
+          format: date
+        result:
+          type: string
+        referenceRange:
+          type: string
+        abnormal:
+          type: boolean
+
+    InsuranceData:
+      type: object
+      properties:
+        provider:
+          type: string
+        planType:
+          type: string
+        membershipId:
+          type: string
+        groupNumber:
+          type: string
+        coverageStartDate:
+          type: string
+          format: date
+        coverageEndDate:
+          type: string
+          format: date
+          nullable: true
+
+    VisitSummary:
+      type: object
+      properties:
+        visitId:
+          type: string
+        visitType:
+          type: string
+          enum: [INPATIENT, OUTPATIENT, EMERGENCY, TELEHEALTH]
+        admissionDate:
+          type: string
+          format: date-time
+        dischargeDate:
+          type: string
+          format: date-time
+          nullable: true
+        primaryDiagnosis:
+          type: string
+        department:
+          type: string
+        provider:
+          type: string
+
+    TimelineEvent:
+      type: object
+      properties:
+        eventId:
+          type: string
+        eventType:
+          type: string
+          enum: [ADMISSION, DISCHARGE, DIAGNOSIS, PROCEDURE, MEDICATION, LAB_TEST, VITALS]
+        timestamp:
+          type: string
+          format: date-time
+        description:
+          type: string
+        value:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        provider:
+          type: string
+          nullable: true
+
+    MetricAnalysis:
+      type: object
+      properties:
+        metricName:
+          type: string
+        period:
+          type: string
+          enum: [DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY]
+        dataPoints:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              value:
+                type: number
+              trend:
+                type: string
+                enum: [INCREASING, DECREASING, STABLE]
+        aggregatedValue:
+          type: number
+        benchmarkValue:
+          type: number
+          nullable: true
+
+    PopulationHealthAnalysis:
+      type: object
+      properties:
+        populationSize:
+          type: integer
+        demographicDistribution:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+        prevalenceRates:
+          type: object
+          additionalProperties:
+            type: number
+        riskFactorAnalysis:
+          type: array
+          items:
+            type: object
+            properties:
+              factor:
+                type: string
+              prevalence:
+                type: number
+              relativeRisk:
+                type: number
+        preventativeMeasureEffectiveness:
+          type: array
+          items:
+            type: object
+            properties:
+              measure:
+                type: string
+              coverage:
+                type: number
+              effectivenessRate:
+                type: number
+
+    TreatmentOutcomeAnalysis:
+      type: object
+      properties:
+        condition:
+          type: string
+        patientCount:
+          type: integer
+        treatmentComparison:
+          type: array
+          items:
+            type: object
+            properties:
+              treatment:
+                type: string
+              patientCount:
+                type: integer
+              outcomeMetrics:
+                type: object
+                additionalProperties:
+                  type: number
+              averageCost:
+                type: number
+              averageDuration:
+                type: number
+              complications:
+                type: object
+                additionalProperties:
+                  type: number
+        recommendedTreatments:
+          type: array
+          items:
+            type: object
+            properties:
+              treatment:
+                type: string
+              patientProfile:
+                type: string
+              effectiveness:
+                type: number
+
+    ResourceUtilizationAnalysis:
+      type: object
+      properties:
+        resourceType:
+          type: string
+        period:
+          type: string
+        utilizationRate:
+          type: number
+        utilizationTrend:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              value:
+                type: number
+        peakTimes:
+          type: array
+          items:
+            type: object
+            properties:
+              dayOfWeek:
+                type: string
+              timeOfDay:
+                type: string
+              utilizationRate:
+                type: number
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    DataImportJob:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, COMPLETED, FAILED]
+        source:
+          type: string
+        recordsProcessed:
+          type: integer
+        errorCount:
+          type: integer
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+          nullable: true
+
+    DataPipelineJob:
+      type: object
+      required:
+        - name
+        - sourceConfig
+        - transformations
+        - destinationConfig
+      properties:
+        name:
+          type: string
+          description: Name of the data pipeline job
+        description:
+          type: string
+          description: Description of the job's purpose
+        sourceConfig:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [DATABASE, FILE, API, STREAMING]
+            connectionDetails:
+              type: object
+              additionalProperties: true
+            dataSelectionQuery:
+              type: string
+        transformations:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [FILTER, MAP, AGGREGATE, JOIN, ENRICH, NORMALIZE]
+              config:
+                type: object
+                additionalProperties: true
+        destinationConfig:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [DATABASE, FILE, API, DATA_WAREHOUSE]
+            connectionDetails:
+              type: object
+              additionalProperties: true
+            writeOptions:
+              type: object
+              additionalProperties: true
+        schedule:
+          type: string
+          description: Cron expression for scheduled jobs
+          nullable: true

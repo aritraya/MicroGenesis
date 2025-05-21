@@ -1,0 +1,940 @@
+openapi: 3.0.3
+info:
+  title: Entity-Driven Banking System API
+  description: |
+    A Banking System API designed with an Entity-Driven approach.
+    This API is centered around the data entities and their relationships, with operations
+    focused on CRUD operations for each entity.
+  version: 1.0.0
+  contact:
+    name: MicroGenesis Team
+    url: https://github.com/microgenesis/microgenesis
+tags:
+  - name: Accounts
+    description: Bank account operations
+  - name: Customers
+    description: Customer operations
+  - name: Transactions
+    description: Transaction operations
+  - name: Cards
+    description: Card operations
+  - name: Loans
+    description: Loan operations
+  - name: Investments
+    description: Investment operations
+
+paths:
+  # ACCOUNTS ENTITY
+  /accounts:
+    get:
+      summary: List all accounts
+      description: Returns a paginated list of all accounts
+      tags:
+        - Accounts
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by account status
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, CLOSED, FROZEN]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountPage'
+    post:
+      summary: Create a new account
+      description: Creates a new bank account
+      tags:
+        - Accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+
+  /accounts/{accountId}:
+    get:
+      summary: Get account by ID
+      description: Returns a single account by ID
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: ID of the account
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+    put:
+      summary: Update account
+      description: Updates account information
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: ID of the account
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+    delete:
+      summary: Delete account
+      description: Marks an account as closed
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: ID of the account
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Account deleted
+        '404':
+          description: Account not found
+
+  /accounts/{accountId}/balance:
+    get:
+      summary: Get account balance
+      description: Returns the current balance of an account
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: ID of the account
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountBalance'
+        '404':
+          description: Account not found
+
+  # CUSTOMERS ENTITY
+  /customers:
+    get:
+      summary: List all customers
+      description: Returns a paginated list of all customers
+      tags:
+        - Customers
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: searchTerm
+          in: query
+          description: Search term for customer name or email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPage'
+    post:
+      summary: Create a new customer
+      description: Creates a new bank customer
+      tags:
+        - Customers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+                
+  /customers/{customerId}:
+    get:
+      summary: Get customer by ID
+      description: Returns a single customer by ID
+      tags:
+        - Customers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID of the customer
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          description: Customer not found
+    put:
+      summary: Update customer
+      description: Updates customer information
+      tags:
+        - Customers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID of the customer
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        '200':
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          description: Customer not found
+
+  /customers/{customerId}/accounts:
+    get:
+      summary: Get customer accounts
+      description: Returns all accounts belonging to a customer
+      tags:
+        - Customers
+        - Accounts
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID of the customer
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+        '404':
+          description: Customer not found
+
+  # TRANSACTIONS ENTITY
+  /transactions:
+    get:
+      summary: List all transactions
+      description: Returns a paginated list of transactions
+      tags:
+        - Transactions
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: accountId
+          in: query
+          description: Filter by account ID
+          schema:
+            type: string
+            format: uuid
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          description: Filter by transaction type
+          schema:
+            type: string
+            enum: [DEPOSIT, WITHDRAWAL, TRANSFER, PAYMENT, FEE, INTEREST, ADJUSTMENT]
+        - name: fromDate
+          in: query
+          description: Filter by start date
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: Filter by end date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionPage'
+    post:
+      summary: Create a new transaction
+      description: Creates a new transaction (deposit, withdrawal, or transfer)
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+
+  /transactions/{transactionId}:
+    get:
+      summary: Get transaction by ID
+      description: Returns a single transaction by ID
+      tags:
+        - Transactions
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: ID of the transaction
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+
+  /accounts/{accountId}/transactions:
+    get:
+      summary: Get account transactions
+      description: Returns transactions for a specific account
+      tags:
+        - Accounts
+        - Transactions
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: ID of the account
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionPage'
+        '404':
+          description: Account not found
+
+  # CARDS ENTITY
+  /cards:
+    get:
+      summary: List all cards
+      description: Returns a paginated list of cards
+      tags:
+        - Cards
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          schema:
+            type: string
+            format: uuid
+        - name: accountId
+          in: query
+          description: Filter by linked account ID
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by card status
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, EXPIRED, BLOCKED]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardPage'
+    post:
+      summary: Create a new card
+      description: Issues a new card
+      tags:
+        - Cards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCardRequest'
+      responses:
+        '201':
+          description: Card issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+
+components:
+  schemas:
+    # BASE TYPES
+    MoneyAmount:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          example: 1000.00
+        currency:
+          type: string
+          example: USD
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          example: 123 Main Street
+        city:
+          type: string
+          example: Boston
+        state:
+          type: string
+          example: MA
+        postalCode:
+          type: string
+          example: 02115
+        country:
+          type: string
+          example: USA
+      
+    Page:
+      type: object
+      properties:
+        number:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 20
+        totalElements:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 5
+          
+    # ENTITY SCHEMAS
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        accountNumber:
+          type: string
+          example: 1234567890
+        customerId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440010
+        type:
+          type: string
+          enum: [CHECKING, SAVINGS, CREDIT, LOAN, INVESTMENT]
+          example: CHECKING
+        balance:
+          $ref: '#/components/schemas/MoneyAmount'
+        availableBalance:
+          $ref: '#/components/schemas/MoneyAmount'
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, CLOSED, FROZEN]
+          example: ACTIVE
+        interestRate:
+          type: number
+          format: double
+          example: 0.025
+        overdraftLimit:
+          $ref: '#/components/schemas/MoneyAmount'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AccountPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Account'
+
+    AccountBalance:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        currentBalance:
+          $ref: '#/components/schemas/MoneyAmount'
+        availableBalance:
+          $ref: '#/components/schemas/MoneyAmount'
+        lastUpdated:
+          type: string
+          format: date-time
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440010
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        phoneNumber:
+          type: string
+          example: +1-555-123-4567
+        dateOfBirth:
+          type: string
+          format: date
+          example: 1990-01-01
+        address:
+          $ref: '#/components/schemas/Address'
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, FROZEN, CLOSED]
+          example: ACTIVE
+        customerNumber:
+          type: string
+          example: CUST00012345
+        taxId:
+          type: string
+          example: 123-45-6789
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CustomerPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Customer'
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440020
+        transactionNumber:
+          type: string
+          example: TXN20230615001234
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL, TRANSFER, PAYMENT, FEE, INTEREST, ADJUSTMENT]
+          example: TRANSFER
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED, REVERSED]
+          example: COMPLETED
+        amount:
+          $ref: '#/components/schemas/MoneyAmount'
+        accountId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        targetAccountId:
+          type: string
+          format: uuid
+          nullable: true
+          example: 550e8400-e29b-41d4-a716-446655440001
+        description:
+          type: string
+          example: Monthly rent payment
+        reference:
+          type: string
+          example: REF123456
+        cardId:
+          type: string
+          format: uuid
+          nullable: true
+        transactionDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    TransactionPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Transaction'
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440030
+        cardNumber:
+          type: string
+          example: "************1234"
+        cardType:
+          type: string
+          enum: [DEBIT, CREDIT, PREPAID]
+          example: CREDIT
+        customerId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440010
+        accountId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        nameOnCard:
+          type: string
+          example: JOHN DOE
+        expirationDate:
+          type: string
+          example: 12/25
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, EXPIRED, BLOCKED]
+          example: ACTIVE
+        creditLimit:
+          $ref: '#/components/schemas/MoneyAmount'
+        availableCredit:
+          $ref: '#/components/schemas/MoneyAmount'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CardPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Card'
+
+    # REQUEST SCHEMAS
+    CreateAccountRequest:
+      type: object
+      required:
+        - customerId
+        - type
+        - currency
+      properties:
+        customerId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440010
+        type:
+          type: string
+          enum: [CHECKING, SAVINGS, CREDIT, LOAN, INVESTMENT]
+          example: CHECKING
+        initialDeposit:
+          type: number
+          format: double
+          example: 1000.00
+        currency:
+          type: string
+          example: USD
+        overdraftLimit:
+          type: number
+          format: double
+          example: 500.00
+
+    UpdateAccountRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, CLOSED, FROZEN]
+          example: ACTIVE
+        overdraftLimit:
+          type: number
+          format: double
+          example: 500.00
+
+    CreateCustomerRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - dateOfBirth
+        - address
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        phoneNumber:
+          type: string
+          example: +1-555-123-4567
+        dateOfBirth:
+          type: string
+          format: date
+          example: 1990-01-01
+        address:
+          $ref: '#/components/schemas/Address'
+        taxId:
+          type: string
+          example: 123-45-6789
+
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        phoneNumber:
+          type: string
+          example: +1-555-123-4567
+        address:
+          $ref: '#/components/schemas/Address'
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, FROZEN, CLOSED]
+          example: ACTIVE
+
+    CreateTransactionRequest:
+      type: object
+      required:
+        - type
+        - amount
+        - accountId
+      properties:
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL, TRANSFER, PAYMENT]
+          example: TRANSFER
+        amount:
+          type: number
+          format: double
+          example: 500.00
+        currency:
+          type: string
+          example: USD
+        accountId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        targetAccountId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440001
+        description:
+          type: string
+          example: Monthly rent payment
+        reference:
+          type: string
+          example: REF123456
+
+    CreateCardRequest:
+      type: object
+      required:
+        - cardType
+        - customerId
+        - accountId
+      properties:
+        cardType:
+          type: string
+          enum: [DEBIT, CREDIT, PREPAID]
+          example: CREDIT
+        customerId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440010
+        accountId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        nameOnCard:
+          type: string
+          example: JOHN DOE
+        creditLimit:
+          type: number
+          format: double
+          example: 5000.00
+          description: Only for credit cards

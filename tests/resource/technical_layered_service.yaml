@@ -1,0 +1,1606 @@
+openapi: 3.0.3
+info:
+  title: Technical/Layered Inventory Management System API
+  description: |
+    An inventory management system API using a traditional layered architecture 
+    (controllers, services, repositories). This design follows a classic n-tier approach
+    where each layer has distinct responsibilities.
+  version: 1.0.0
+  contact:
+    name: MicroGenesis Team
+    url: https://github.com/microgenesis/microgenesis
+tags:
+  - name: Product Controller
+    description: Product management endpoints
+  - name: Inventory Controller
+    description: Inventory management endpoints
+  - name: Warehouse Controller
+    description: Warehouse management endpoints
+  - name: Supplier Controller
+    description: Supplier management endpoints
+  - name: Purchase Order Controller
+    description: Purchase order endpoints
+  - name: Report Controller
+    description: Reporting endpoints
+  - name: User Controller
+    description: User management endpoints
+
+paths:
+  # PRODUCT CONTROLLER
+  /api/products:
+    get:
+      summary: List all products
+      description: Returns a paginated list of products
+      operationId: getAllProducts
+      tags:
+        - Product Controller
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          description: Field to sort by
+          schema:
+            type: string
+            default: name
+        - name: sortDir
+          in: query
+          description: Sort direction
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPageResponse'
+    post:
+      summary: Create a product
+      description: Creates a new product
+      operationId: createProduct
+      tags:
+        - Product Controller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/products/{id}:
+    get:
+      summary: Get product by ID
+      description: Returns a single product
+      operationId: getProductById
+      tags:
+        - Product Controller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update product
+      description: Updates an existing product
+      operationId: updateProduct
+      tags:
+        - Product Controller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete product
+      description: Deletes a product
+      operationId: deleteProduct
+      tags:
+        - Product Controller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Product deleted
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  # INVENTORY CONTROLLER
+  /api/inventory:
+    get:
+      summary: Get inventory summary
+      description: Returns inventory summary across all warehouses
+      operationId: getInventorySummary
+      tags:
+        - Inventory Controller
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: lowStock
+          in: query
+          description: Show only low stock items
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryPageResponse'
+
+  /api/inventory/{productId}:
+    get:
+      summary: Get inventory for a product
+      description: Returns inventory levels by warehouse for a specific product
+      operationId: getProductInventory
+      tags:
+        - Inventory Controller
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  /api/inventory/adjust:
+    post:
+      summary: Adjust inventory
+      description: Adjust inventory levels (add, remove, set)
+      operationId: adjustInventory
+      tags:
+        - Inventory Controller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryAdjustmentRequest'
+      responses:
+        '200':
+          description: Inventory adjusted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Product or warehouse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  # WAREHOUSE CONTROLLER
+  /api/warehouses:
+    get:
+      summary: List all warehouses
+      description: Returns a list of warehouses
+      operationId: getAllWarehouses
+      tags:
+        - Warehouse Controller
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WarehouseResponse'
+    post:
+      summary: Create a warehouse
+      description: Creates a new warehouse
+      operationId: createWarehouse
+      tags:
+        - Warehouse Controller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+      responses:
+        '201':
+          description: Warehouse created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  /api/warehouses/{id}:
+    get:
+      summary: Get warehouse by ID
+      description: Returns a single warehouse
+      operationId: getWarehouseById
+      tags:
+        - Warehouse Controller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Warehouse ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseResponse'
+        '404':
+          description: Warehouse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update warehouse
+      description: Updates an existing warehouse
+      operationId: updateWarehouse
+      tags:
+        - Warehouse Controller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Warehouse ID
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+      responses:
+        '200':
+          description: Warehouse updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Warehouse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  /api/warehouses/{id}/inventory:
+    get:
+      summary: Get warehouse inventory
+      description: Returns all inventory in a specific warehouse
+      operationId: getWarehouseInventory
+      tags:
+        - Warehouse Controller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Warehouse ID
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryPageResponse'
+        '404':
+          description: Warehouse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  # SUPPLIER CONTROLLER
+  /api/suppliers:
+    get:
+      summary: List all suppliers
+      description: Returns a paginated list of suppliers
+      operationId: getAllSuppliers
+      tags:
+        - Supplier Controller
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPageResponse'
+    post:
+      summary: Create a supplier
+      description: Creates a new supplier
+      operationId: createSupplier
+      tags:
+        - Supplier Controller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierRequest'
+      responses:
+        '201':
+          description: Supplier created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  # PURCHASE ORDER CONTROLLER
+  /api/purchase-orders:
+    get:
+      summary: List purchase orders
+      description: Returns a paginated list of purchase orders
+      operationId: getAllPurchaseOrders
+      tags:
+        - Purchase Order Controller
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [DRAFT, SUBMITTED, APPROVED, SHIPPED, RECEIVED, CANCELLED]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderPageResponse'
+    post:
+      summary: Create purchase order
+      description: Creates a new purchase order
+      operationId: createPurchaseOrder
+      tags:
+        - Purchase Order Controller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderRequest'
+      responses:
+        '201':
+          description: Purchase order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/purchase-orders/{id}/receive:
+    post:
+      summary: Receive purchase order
+      description: Mark a purchase order as received and update inventory
+      operationId: receivePurchaseOrder
+      tags:
+        - Purchase Order Controller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Purchase Order ID
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceivePurchaseOrderRequest'
+      responses:
+        '200':
+          description: Purchase order received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderResponse'
+        '400':
+          description: Invalid input or order status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Purchase order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # REPORT CONTROLLER
+  /api/reports/low-stock:
+    get:
+      summary: Low stock report
+      description: Get report of items with stock below threshold
+      operationId: getLowStockReport
+      tags:
+        - Report Controller
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LowStockReportResponse'
+
+  /api/reports/inventory-value:
+    get:
+      summary: Inventory value report
+      description: Get report of total inventory value
+      operationId: getInventoryValueReport
+      tags:
+        - Report Controller
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryValueReportResponse'
+
+  /api/reports/activity:
+    get:
+      summary: Inventory activity report
+      description: Get report of inventory activity in a date range
+      operationId: getActivityReport
+      tags:
+        - Report Controller
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          description: Start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          description: End date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: productId
+          in: query
+          description: Filter by product
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityReportResponse'
+        '400':
+          description: Invalid date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    # Base response schemas
+    PageResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 20
+        totalElements:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 5
+          
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          format: int32
+          example: 400
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: Invalid input data
+        details:
+          type: array
+          items:
+            type: string
+            example: "Product name cannot be empty"
+
+    # Product schemas
+    ProductRequest:
+      type: object
+      required:
+        - name
+        - sku
+        - category
+      properties:
+        name:
+          type: string
+          example: Ergonomic Office Chair
+        description:
+          type: string
+          example: High-quality ergonomic chair with lumbar support
+        sku:
+          type: string
+          example: CHAIR-ERG-001
+        category:
+          type: string
+          example: Furniture
+        price:
+          type: number
+          format: double
+          example: 249.99
+        cost:
+          type: number
+          format: double
+          example: 150.00
+        minimumStockLevel:
+          type: integer
+          format: int32
+          example: 5
+        reorderQuantity:
+          type: integer
+          format: int32
+          example: 20
+        leadTime:
+          type: integer
+          format: int32
+          example: 14
+          description: Lead time in days
+        active:
+          type: boolean
+          example: true
+        dimensions:
+          type: object
+          properties:
+            length:
+              type: number
+              format: double
+              example: 60.0
+            width:
+              type: number
+              format: double
+              example: 60.0
+            height:
+              type: number
+              format: double
+              example: 120.0
+            weightKg:
+              type: number
+              format: double
+              example: 15.0
+        supplierInfo:
+          type: array
+          items:
+            type: object
+            properties:
+              supplierId:
+                type: integer
+                format: int64
+                example: 1
+              supplierSku:
+                type: string
+                example: SUP-CHAIR-101
+              cost:
+                type: number
+                format: double
+                example: 145.00
+              isPreferred:
+                type: boolean
+                example: true
+
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Ergonomic Office Chair
+        description:
+          type: string
+          example: High-quality ergonomic chair with lumbar support
+        sku:
+          type: string
+          example: CHAIR-ERG-001
+        category:
+          type: string
+          example: Furniture
+        price:
+          type: number
+          format: double
+          example: 249.99
+        cost:
+          type: number
+          format: double
+          example: 150.00
+        totalStock:
+          type: integer
+          format: int32
+          example: 25
+        minimumStockLevel:
+          type: integer
+          format: int32
+          example: 5
+        reorderQuantity:
+          type: integer
+          format: int32
+          example: 20
+        leadTime:
+          type: integer
+          format: int32
+          example: 14
+          description: Lead time in days
+        active:
+          type: boolean
+          example: true
+        dimensions:
+          type: object
+          properties:
+            length:
+              type: number
+              format: double
+              example: 60.0
+            width:
+              type: number
+              format: double
+              example: 60.0
+            height:
+              type: number
+              format: double
+              example: 120.0
+            weightKg:
+              type: number
+              format: double
+              example: 15.0
+        supplierInfo:
+          type: array
+          items:
+            type: object
+            properties:
+              supplierId:
+                type: integer
+                format: int64
+                example: 1
+              supplierName:
+                type: string
+                example: Office Furniture Suppliers Inc.
+              supplierSku:
+                type: string
+                example: SUP-CHAIR-101
+              cost:
+                type: number
+                format: double
+                example: 145.00
+              isPreferred:
+                type: boolean
+                example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProductPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductResponse'
+
+    # Inventory schemas
+    InventoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        productId:
+          type: integer
+          format: int64
+          example: 1
+        productName:
+          type: string
+          example: Ergonomic Office Chair
+        productSku:
+          type: string
+          example: CHAIR-ERG-001
+        warehouseId:
+          type: integer
+          format: int64
+          example: 1
+        warehouseName:
+          type: string
+          example: Main Warehouse
+        quantity:
+          type: integer
+          format: int32
+          example: 15
+        location:
+          type: string
+          example: A12-B3-C4
+        lastUpdated:
+          type: string
+          format: date-time
+        minimumStockLevel:
+          type: integer
+          format: int32
+          example: 5
+        status:
+          type: string
+          enum: [OK, LOW_STOCK, OUT_OF_STOCK]
+          example: OK
+
+    InventoryPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/InventoryResponse'
+
+    InventoryAdjustmentRequest:
+      type: object
+      required:
+        - productId
+        - warehouseId
+        - adjustmentType
+        - quantity
+      properties:
+        productId:
+          type: integer
+          format: int64
+          example: 1
+        warehouseId:
+          type: integer
+          format: int64
+          example: 1
+        adjustmentType:
+          type: string
+          enum: [ADD, REMOVE, SET]
+          example: ADD
+        quantity:
+          type: integer
+          format: int32
+          example: 10
+        reason:
+          type: string
+          example: Stock count correction
+        location:
+          type: string
+          example: A12-B3-C4
+          description: Storage location within warehouse
+
+    # Warehouse schemas
+    WarehouseRequest:
+      type: object
+      required:
+        - name
+        - address
+      properties:
+        name:
+          type: string
+          example: Main Warehouse
+        code:
+          type: string
+          example: WH-MAIN
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: 123 Storage Lane
+            city:
+              type: string
+              example: Warehouseville
+            state:
+              type: string
+              example: WA
+            postalCode:
+              type: string
+              example: 98101
+            country:
+              type: string
+              example: USA
+        contactName:
+          type: string
+          example: John Smith
+        contactEmail:
+          type: string
+          format: email
+          example: john.smith@example.com
+        contactPhone:
+          type: string
+          example: +1-555-123-4567
+        isActive:
+          type: boolean
+          example: true
+
+    WarehouseResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Main Warehouse
+        code:
+          type: string
+          example: WH-MAIN
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: 123 Storage Lane
+            city:
+              type: string
+              example: Warehouseville
+            state:
+              type: string
+              example: WA
+            postalCode:
+              type: string
+              example: 98101
+            country:
+              type: string
+              example: USA
+        contactName:
+          type: string
+          example: John Smith
+        contactEmail:
+          type: string
+          format: email
+          example: john.smith@example.com
+        contactPhone:
+          type: string
+          example: +1-555-123-4567
+        isActive:
+          type: boolean
+          example: true
+        totalProducts:
+          type: integer
+          format: int32
+          example: 250
+        totalInventoryValue:
+          type: number
+          format: double
+          example: 175000.00
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Supplier schemas
+    SupplierRequest:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          example: Office Furniture Suppliers Inc.
+        code:
+          type: string
+          example: SUP-OFS
+        contactName:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          format: email
+          example: jane.doe@ofsinc.com
+        phone:
+          type: string
+          example: +1-555-987-6543
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: 456 Supplier Ave
+            city:
+              type: string
+              example: Vendortown
+            state:
+              type: string
+              example: CA
+            postalCode:
+              type: string
+              example: 90210
+            country:
+              type: string
+              example: USA
+        paymentTerms:
+          type: string
+          example: Net 30
+        leadTime:
+          type: integer
+          format: int32
+          example: 14
+          description: Average lead time in days
+        minimumOrderValue:
+          type: number
+          format: double
+          example: 500.00
+        isActive:
+          type: boolean
+          example: true
+        notes:
+          type: string
+          example: Preferred supplier for office furniture
+
+    SupplierResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Office Furniture Suppliers Inc.
+        code:
+          type: string
+          example: SUP-OFS
+        contactName:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          format: email
+          example: jane.doe@ofsinc.com
+        phone:
+          type: string
+          example: +1-555-987-6543
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: 456 Supplier Ave
+            city:
+              type: string
+              example: Vendortown
+            state:
+              type: string
+              example: CA
+            postalCode:
+              type: string
+              example: 90210
+            country:
+              type: string
+              example: USA
+        paymentTerms:
+          type: string
+          example: Net 30
+        leadTime:
+          type: integer
+          format: int32
+          example: 14
+          description: Average lead time in days
+        minimumOrderValue:
+          type: number
+          format: double
+          example: 500.00
+        isActive:
+          type: boolean
+          example: true
+        notes:
+          type: string
+          example: Preferred supplier for office furniture
+        productCount:
+          type: integer
+          format: int32
+          example: 45
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SupplierPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/SupplierResponse'
+
+    # Purchase order schemas
+    PurchaseOrderItem:
+      type: object
+      required:
+        - productId
+        - quantity
+        - unitCost
+      properties:
+        productId:
+          type: integer
+          format: int64
+          example: 1
+        quantity:
+          type: integer
+          format: int32
+          example: 20
+        unitCost:
+          type: number
+          format: double
+          example: 145.00
+        notes:
+          type: string
+          example: Special order color
+
+    PurchaseOrderRequest:
+      type: object
+      required:
+        - supplierId
+        - warehouseId
+        - items
+      properties:
+        supplierId:
+          type: integer
+          format: int64
+          example: 1
+        warehouseId:
+          type: integer
+          format: int64
+          example: 1
+        expectedDeliveryDate:
+          type: string
+          format: date
+          example: 2023-08-15
+        notes:
+          type: string
+          example: Regular monthly order
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderItem'
+
+    PurchaseOrderResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        orderNumber:
+          type: string
+          example: PO-2023-0001
+        supplierId:
+          type: integer
+          format: int64
+          example: 1
+        supplierName:
+          type: string
+          example: Office Furniture Suppliers Inc.
+        warehouseId:
+          type: integer
+          format: int64
+          example: 1
+        warehouseName:
+          type: string
+          example: Main Warehouse
+        status:
+          type: string
+          enum: [DRAFT, SUBMITTED, APPROVED, SHIPPED, RECEIVED, CANCELLED]
+          example: SUBMITTED
+        orderDate:
+          type: string
+          format: date
+          example: 2023-07-15
+        expectedDeliveryDate:
+          type: string
+          format: date
+          example: 2023-08-15
+        receivedDate:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          example: Regular monthly order
+        totalCost:
+          type: number
+          format: double
+          example: 2900.00
+        items:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/PurchaseOrderItem'
+              - type: object
+                properties:
+                  productName:
+                    type: string
+                    example: Ergonomic Office Chair
+                  productSku:
+                    type: string
+                    example: CHAIR-ERG-001
+                  totalCost:
+                    type: number
+                    format: double
+                    example: 2900.00
+                  receivedQuantity:
+                    type: integer
+                    format: int32
+                    example: 0
+        createdBy:
+          type: string
+          example: john.smith
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PurchaseOrderPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/PurchaseOrderResponse'
+
+    ReceivePurchaseOrderRequest:
+      type: object
+      required:
+        - items
+      properties:
+        receivedDate:
+          type: string
+          format: date
+          example: 2023-08-13
+        notes:
+          type: string
+          example: Partial delivery - remaining items back-ordered
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+                format: int64
+                example: 1
+              receivedQuantity:
+                type: integer
+                format: int32
+                example: 15
+              location:
+                type: string
+                example: A12-B3-C4
+
+    # Report schemas
+    LowStockItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+          example: 1
+        productName:
+          type: string
+          example: Ergonomic Office Chair
+        productSku:
+          type: string
+          example: CHAIR-ERG-001
+        totalQuantity:
+          type: integer
+          format: int32
+          example: 3
+        minimumStockLevel:
+          type: integer
+          format: int32
+          example: 5
+        reorderQuantity:
+          type: integer
+          format: int32
+          example: 20
+        supplierName:
+          type: string
+          example: Office Furniture Suppliers Inc.
+        leadTime:
+          type: integer
+          format: int32
+          example: 14
+        warehouseBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              warehouseId:
+                type: integer
+                format: int64
+                example: 1
+              warehouseName:
+                type: string
+                example: Main Warehouse
+              quantity:
+                type: integer
+                format: int32
+                example: 2
+        onOrder:
+          type: boolean
+          example: true
+        onOrderQuantity:
+          type: integer
+          format: int32
+          example: 20
+        expectedDeliveryDate:
+          type: string
+          format: date
+          example: 2023-08-15
+
+    LowStockReportResponse:
+      type: object
+      properties:
+        reportDate:
+          type: string
+          format: date
+          example: 2023-07-28
+        itemCount:
+          type: integer
+          format: int32
+          example: 3
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LowStockItem'
+
+    InventoryValueItem:
+      type: object
+      properties:
+        categoryName:
+          type: string
+          example: Furniture
+        totalCost:
+          type: number
+          format: double
+          example: 9500.00
+        totalValue:
+          type: number
+          format: double
+          example: 15000.00
+        itemCount:
+          type: integer
+          format: int32
+          example: 50
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              warehouseId:
+                type: integer
+                format: int64
+                example: 1
+              warehouseName:
+                type: string
+                example: Main Warehouse
+              totalCost:
+                type: number
+                format: double
+                example: 6000.00
+              totalValue:
+                type: number
+                format: double
+                example: 10000.00
+              itemCount:
+                type: integer
+                format: int32
+                example: 30
+
+    InventoryValueReportResponse:
+      type: object
+      properties:
+        reportDate:
+          type: string
+          format: date
+          example: 2023-07-28
+        totalCost:
+          type: number
+          format: double
+          example: 150000.00
+        totalValue:
+          type: number
+          format: double
+          example: 250000.00
+        totalItems:
+          type: integer
+          format: int32
+          example: 500
+        categorySummary:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryValueItem'
+
+    ActivityItem:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: 2023-07-15
+        productId:
+          type: integer
+          format: int64
+          example: 1
+        productName:
+          type: string
+          example: Ergonomic Office Chair
+        productSku:
+          type: string
+          example: CHAIR-ERG-001
+        warehouseId:
+          type: integer
+          format: int64
+          example: 1
+        warehouseName:
+          type: string
+          example: Main Warehouse
+        activityType:
+          type: string
+          enum: [PURCHASE_ORDER_RECEIVED, INVENTORY_ADJUSTMENT, SALES_ORDER]
+          example: PURCHASE_ORDER_RECEIVED
+        quantityChange:
+          type: integer
+          format: int32
+          example: 20
+        newQuantity:
+          type: integer
+          format: int32
+          example: 35
+        referenceNumber:
+          type: string
+          example: PO-2023-0001
+        performedBy:
+          type: string
+          example: john.smith
+        timestamp:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          example: Routine stock delivery
+
+    ActivityReportResponse:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date
+          example: 2023-07-01
+        endDate:
+          type: string
+          format: date
+          example: 2023-07-31
+        totalRecords:
+          type: integer
+          format: int32
+          example: 125
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityItem'
