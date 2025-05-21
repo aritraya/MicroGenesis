@@ -1,0 +1,125 @@
+{
+  "entity_relationships": [
+    {
+      "source_entity": "Employee",
+      "target_entity": "Department",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "department",
+      "target_field": "employees"
+    },
+    {
+      "source_entity": "EmployeeProject",
+      "target_entity": "Employee",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "employee",
+      "target_field": "projects"
+    },
+    {
+      "source_entity": "EmployeeProject",
+      "target_entity": "Project",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "project",
+      "target_field": "employees"
+    },
+    {
+      "source_entity": "Task",
+      "target_entity": "Project",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "project",
+      "target_field": "tasks"
+    },
+    {
+      "source_entity": "TaskAssignment",
+      "target_entity": "Task",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "task",
+      "target_field": "assignments"
+    },
+    {
+      "source_entity": "TaskAssignment",
+      "target_entity": "Employee",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "employee",
+      "target_field": "taskAssignments"
+    },
+    {
+      "source_entity": "Document",
+      "target_entity": "Project",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "project",
+      "target_field": "documents"
+    },
+    {
+      "source_entity": "DocumentRevision",
+      "target_entity": "Document",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "document",
+      "target_field": "revisions"
+    },
+    {
+      "source_entity": "DocumentRevision",
+      "target_entity": "Employee",
+      "type": "many-to-one",
+      "bidirectional": false,
+      "fetch_type": "LAZY",
+      "source_field": "author",
+      "target_field": null
+    },
+    {
+      "source_entity": "EmployeeContact",
+      "target_entity": "Employee",
+      "type": "one-to-one",
+      "bidirectional": true,
+      "fetch_type": "EAGER",
+      "source_field": "employee",
+      "target_field": "contact"
+    },
+    {
+      "source_entity": "EmployeeSkill",
+      "target_entity": "Employee",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "employee",
+      "target_field": "skills"
+    },
+    {
+      "source_entity": "EmployeeSkill",
+      "target_entity": "Skill",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "skill",
+      "target_field": "employees"
+    }
+  ],
+  "table_mappings": {
+    "employees": "Employee",
+    "employee_contacts": "EmployeeContact",
+    "departments": "Department",
+    "projects": "Project",
+    "employee_projects": "EmployeeProject",
+    "tasks": "Task",
+    "task_assignments": "TaskAssignment",
+    "documents": "Document",
+    "document_revisions": "DocumentRevision",
+    "skills": "Skill",
+    "employee_skills": "EmployeeSkill"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "entity_relationships": [
+    {
+      "source_entity": "Product",
+      "target_entity": "Category",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "category",
+      "target_field": "products"
+    },
+    {
+      "source_entity": "ProductDetail",
+      "target_entity": "Product",
+      "type": "one-to-one",
+      "bidirectional": true,
+      "fetch_type": "EAGER",
+      "source_field": "product",
+      "target_field": "productDetail"
+    },
+    {
+      "source_entity": "ProductSpecification",
+      "target_entity": "Product",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": "specifications"
+    },
+    {
+      "source_entity": "ProductImage",
+      "target_entity": "Product",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": "images"
+    },
+    {
+      "source_entity": "Category",
+      "target_entity": "Category",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "parentCategory",
+      "target_field": "subCategories"
+    },
+    {
+      "source_entity": "Order",
+      "target_entity": "Customer",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "customer",
+      "target_field": "orders"
+    },
+    {
+      "source_entity": "OrderItem",
+      "target_entity": "Order",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "EAGER",
+      "source_field": "order",
+      "target_field": "items"
+    },
+    {
+      "source_entity": "OrderItem",
+      "target_entity": "Product",
+      "type": "many-to-one",
+      "bidirectional": false,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": null
+    },
+    {
+      "source_entity": "CustomerAddress",
+      "target_entity": "Customer",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "customer",
+      "target_field": "addresses"
+    },
+    {
+      "source_entity": "ShippingInfo",
+      "target_entity": "Order",
+      "type": "one-to-one",
+      "bidirectional": true,
+      "fetch_type": "EAGER",
+      "source_field": "order",
+      "target_field": "shippingInfo"
+    },
+    {
+      "source_entity": "PaymentInfo",
+      "target_entity": "Order",
+      "type": "one-to-one",
+      "bidirectional": true,
+      "fetch_type": "EAGER", 
+      "source_field": "order",
+      "target_field": "paymentInfo"
+    }
+  ],
+  "table_mappings": {
+    "categories": "Category",
+    "products": "Product",
+    "product_details": "ProductDetail",
+    "product_specifications": "ProductSpecification",
+    "product_images": "ProductImage",
+    "customers": "Customer",
+    "customer_addresses": "CustomerAddress",
+    "orders": "Order",
+    "order_items": "OrderItem",
+    "shipping_info": "ShippingInfo",
+    "payment_info": "PaymentInfo"
+  }
+}

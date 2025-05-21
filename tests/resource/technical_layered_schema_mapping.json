@@ -1,0 +1,154 @@
+{
+  "entity_relationships": [
+    {
+      "source_entity": "ProductDimension",
+      "target_entity": "Product",
+      "type": "one-to-one",
+      "bidirectional": true,
+      "fetch_type": "EAGER",
+      "source_field": "product",
+      "target_field": "dimension"
+    },
+    {
+      "source_entity": "Inventory",
+      "target_entity": "Product",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": "inventoryItems"
+    },
+    {
+      "source_entity": "Inventory",
+      "target_entity": "Warehouse",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "warehouse",
+      "target_field": "inventoryItems"
+    },
+    {
+      "source_entity": "InventoryTransaction",
+      "target_entity": "Inventory",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "inventory",
+      "target_field": "transactions"
+    },
+    {
+      "source_entity": "InventoryTransaction",
+      "target_entity": "User",
+      "type": "many-to-one",
+      "bidirectional": false,
+      "fetch_type": "LAZY",
+      "source_field": "createdBy",
+      "target_field": null
+    },
+    {
+      "source_entity": "ProductSupplier",
+      "target_entity": "Product",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": "suppliers"
+    },
+    {
+      "source_entity": "ProductSupplier",
+      "target_entity": "Supplier",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY", 
+      "source_field": "supplier",
+      "target_field": "products"
+    },
+    {
+      "source_entity": "PurchaseOrder",
+      "target_entity": "Supplier",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "supplier",
+      "target_field": "purchaseOrders"
+    },
+    {
+      "source_entity": "PurchaseOrder",
+      "target_entity": "User",
+      "type": "many-to-one",
+      "bidirectional": false,
+      "fetch_type": "LAZY",
+      "source_field": "createdBy",
+      "target_field": null
+    },
+    {
+      "source_entity": "PurchaseOrderItem",
+      "target_entity": "PurchaseOrder",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "purchaseOrder",
+      "target_field": "items"
+    },
+    {
+      "source_entity": "PurchaseOrderItem",
+      "target_entity": "Product",
+      "type": "many-to-one",
+      "bidirectional": false,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": null
+    },
+    {
+      "source_entity": "PurchaseOrderReceipt",
+      "target_entity": "PurchaseOrder",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "purchaseOrder",
+      "target_field": "receipts"
+    },
+    {
+      "source_entity": "PurchaseReceiptItem",
+      "target_entity": "PurchaseOrderReceipt",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "receipt",
+      "target_field": "items"
+    },
+    {
+      "source_entity": "PurchaseReceiptItem",
+      "target_entity": "PurchaseOrderItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "orderItem",
+      "target_field": "receiptItems"
+    },
+    {
+      "source_entity": "AuditLog",
+      "target_entity": "User",
+      "type": "many-to-one",
+      "bidirectional": false,
+      "fetch_type": "LAZY",
+      "source_field": "user",
+      "target_field": null
+    }
+  ],
+  "table_mappings": {
+    "products": "Product",
+    "product_dimensions": "ProductDimension",
+    "warehouses": "Warehouse",
+    "inventory": "Inventory", 
+    "inventory_transactions": "InventoryTransaction",
+    "suppliers": "Supplier",
+    "product_suppliers": "ProductSupplier",
+    "purchase_orders": "PurchaseOrder",
+    "purchase_order_items": "PurchaseOrderItem",
+    "purchase_order_receipts": "PurchaseOrderReceipt",
+    "purchase_receipt_items": "PurchaseReceiptItem",
+    "users": "User",
+    "audit_logs": "AuditLog"
+  }
+}

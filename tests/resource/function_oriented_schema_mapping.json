@@ -1,0 +1,117 @@
+{
+  "entity_relationships": [
+    {
+      "source_entity": "ContentVersion",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "contentItem",
+      "target_field": "versions"
+    },
+    {
+      "source_entity": "MediaItem",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "contentItem",
+      "target_field": "mediaItems"
+    },
+    {
+      "source_entity": "MediaVariant",
+      "target_entity": "MediaItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "mediaItem",
+      "target_field": "variants"
+    },
+    {
+      "source_entity": "PublishingOperation",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "contentItem",
+      "target_field": "publishingOperations"
+    },
+    {
+      "source_entity": "ContentTagOperation",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "contentItem",
+      "target_field": "tagOperations"
+    },
+    {
+      "source_entity": "ContentCategoryOperation",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "contentItem",
+      "target_field": "categoryOperations"
+    },
+    {
+      "source_entity": "AnalyticsOperation",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "contentItem",
+      "target_field": "analyticsOperations"
+    },
+    {
+      "source_entity": "UserSessionData",
+      "target_entity": "AnalyticsOperation",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "analyticsOperation",
+      "target_field": "sessionData"
+    },
+    {
+      "source_entity": "SearchOperation",
+      "target_entity": "ContentItem",
+      "type": "many-to-many",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "contentItems",
+      "target_field": "searchOperations"
+    },
+    {
+      "source_entity": "TranslationOperation",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "sourceContent",
+      "target_field": "translationOperations"
+    },
+    {
+      "source_entity": "TranslationOperation",
+      "target_entity": "ContentItem",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "targetContent",
+      "target_field": "translationTargetOperations"
+    }
+  ],
+  "table_mappings": {
+    "content_items": "ContentItem",
+    "content_versions": "ContentVersion",
+    "media_items": "MediaItem",
+    "media_variants": "MediaVariant",
+    "publishing_operations": "PublishingOperation",
+    "content_tag_operations": "ContentTagOperation",
+    "content_category_operations": "ContentCategoryOperation",
+    "analytics_operations": "AnalyticsOperation",
+    "user_session_data": "UserSessionData",
+    "search_operations": "SearchOperation",
+    "search_content_items": "SearchContentItem",
+    "translation_operations": "TranslationOperation"
+  }
+}

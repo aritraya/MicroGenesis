@@ -1,0 +1,118 @@
+{
+  "entity_relationships": [
+    {
+      "source_entity": "Customer",
+      "target_entity": "CustomerSegment",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "segment",
+      "target_field": "customers"
+    },
+    {
+      "source_entity": "Transaction",
+      "target_entity": "Customer",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "customer",
+      "target_field": "transactions"
+    },
+    {
+      "source_entity": "TransactionItem",
+      "target_entity": "Transaction",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "transaction",
+      "target_field": "items"
+    },
+    {
+      "source_entity": "TransactionItem",
+      "target_entity": "Product",
+      "type": "many-to-one",
+      "bidirectional": false,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": null
+    },
+    {
+      "source_entity": "Product",
+      "target_entity": "ProductCategory",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "category",
+      "target_field": "products"
+    },
+    {
+      "source_entity": "CustomerInteraction",
+      "target_entity": "Customer",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "customer",
+      "target_field": "interactions"
+    },
+    {
+      "source_entity": "CustomerPreference",
+      "target_entity": "Customer",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "customer",
+      "target_field": "preferences"
+    },
+    {
+      "source_entity": "MarketingCampaign",
+      "target_entity": "CustomerSegment",
+      "type": "many-to-many",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "segments",
+      "target_field": "campaigns"
+    },
+    {
+      "source_entity": "CampaignPerformance",
+      "target_entity": "MarketingCampaign",
+      "type": "many-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "campaign",
+      "target_field": "performanceMetrics"
+    },
+    {
+      "source_entity": "CustomerMetric",
+      "target_entity": "Customer",
+      "type": "one-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "customer",
+      "target_field": "metrics"
+    },
+    {
+      "source_entity": "ProductMetric",
+      "target_entity": "Product",
+      "type": "one-to-one",
+      "bidirectional": true,
+      "fetch_type": "LAZY",
+      "source_field": "product",
+      "target_field": "metrics"
+    }
+  ],
+  "table_mappings": {
+    "customers": "Customer",
+    "customer_segments": "CustomerSegment",
+    "customer_interactions": "CustomerInteraction",
+    "customer_preferences": "CustomerPreference",
+    "customer_metrics": "CustomerMetric",
+    "products": "Product",
+    "product_categories": "ProductCategory",
+    "product_metrics": "ProductMetric",
+    "transactions": "Transaction",
+    "transaction_items": "TransactionItem",
+    "marketing_campaigns": "MarketingCampaign",
+    "campaign_performances": "CampaignPerformance",
+    "campaign_segments": "CampaignSegment"
+  }
+}
