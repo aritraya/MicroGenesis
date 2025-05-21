@@ -1,0 +1,106 @@
+pipeline {
+    agent any
+    
+    tools {
+        jdk 'JDK-{{ java_version }}'
+        {% if build_system.name == 'maven' %}
+        maven 'Maven-3.8'
+        {% elif build_system.name == 'gradle' %}
+        gradle 'Gradle-7.4'
+        {% endif %}
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                {% if build_system.name == 'maven' %}
+                sh 'mvn clean compile'
+                {% elif build_system.name == 'gradle' %}
+                sh './gradlew clean compileJava'
+                {% endif %}
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                {% if build_system.name == 'maven' %}
+                sh 'mvn test'
+                {% elif build_system.name == 'gradle' %}
+                sh './gradlew test'
+                {% endif %}
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+        
+        {% if 'logging' in features or 'data' in features %}
+        stage('Code Coverage') {
+            steps {
+                {% if build_system.name == 'maven' %}
+                sh 'mvn verify -P coverage'
+                {% elif build_system.name == 'gradle' %}
+                sh './gradlew jacocoTestReport'
+                {% endif %}
+            }
+            post {
+                always {
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '{% if build_system.name == 'maven' %}target/site/jacoco{% elif build_system.name == 'gradle' %}build/reports/jacoco/test/html{% endif %}',
+                        reportFiles: 'index.html',
+                        reportName: 'Code Coverage Report'
+                    ])
+                }
+            }
+        }
+        {% endif %}
+        
+        stage('Package') {
+            steps {
+                {% if build_system.name == 'maven' %}
+                sh 'mvn package -DskipTests'
+                {% elif build_system.name == 'gradle' %}
+                sh './gradlew assemble -x test'
+                {% endif %}
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: '{% if build_system.name == 'maven' %}target/*.jar{% elif build_system.name == 'gradle' %}build/libs/*.jar{% endif %}', fingerprint: true
+                }
+            }
+        }
+        
+        {% if 'docker' in features %}
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("{{ project|lower }}:${env.BUILD_ID}")
+                }
+            }
+        }
+        {% endif %}
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo 'Build successful!'
+        }
+        failure {
+            echo 'Build failed!'
+        }
+    }
+}

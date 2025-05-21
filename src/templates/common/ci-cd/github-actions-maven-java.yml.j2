@@ -1,0 +1,76 @@
+name: {{ project }} CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK {{ java_version }}
+      uses: actions/setup-java@v3
+      with:
+        java-version: '{{ java_version }}'
+        distribution: 'adopt'
+        cache: {% if build_system.name == 'maven' %}maven{% elif build_system.name == 'gradle' %}gradle{% endif %}
+    
+    {% if database.name == 'mysql' %}
+    - name: Set up MySQL
+      uses: mirromutth/mysql-action@v1.1
+      with:
+        mysql version: '8.0'
+        mysql database: '{{ project|lower }}_test'
+        mysql root password: 'password'
+    {% elif database.name == 'postgresql' %}
+    - name: Set up PostgreSQL
+      uses: harmon758/postgresql-action@v1
+      with:
+        postgresql version: '13'
+        postgresql db: '{{ project|lower }}_test'
+        postgresql user: 'postgres'
+        postgresql password: 'password'
+    {% endif %}
+    
+    {% if build_system.name == 'maven' %}
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+    
+    - name: Run tests
+      run: mvn test
+    
+    {% if 'logging' in features or 'data' in features %}
+    - name: Generate code coverage
+      run: mvn verify -P coverage
+    {% endif %}
+    {% elif build_system.name == 'gradle' %}
+    - name: Build with Gradle
+      run: ./gradlew build
+    
+    - name: Run tests
+      run: ./gradlew test
+    
+    {% if 'logging' in features or 'data' in features %}
+    - name: Generate code coverage
+      run: ./gradlew jacocoTestReport
+    {% endif %}
+    {% endif %}
+    
+    {% if 'logging' in features or 'data' in features %}
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: {% if build_system.name == 'maven' %}target/site/jacoco{% elif build_system.name == 'gradle' %}build/reports/jacoco/test{% endif %}
+    {% endif %}
+    
+    - name: Build and save package
+      uses: actions/upload-artifact@v3
+      with:
+        name: {{ project|lower }}-package
+        path: {% if build_system.name == 'maven' %}target/*.jar{% elif build_system.name == 'gradle' %}build/libs/*.jar{% endif %}

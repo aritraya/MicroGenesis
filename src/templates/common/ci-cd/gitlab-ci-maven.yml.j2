@@ -1,0 +1,113 @@
+stages:
+  - build
+  - test
+  - analyze
+{% if 'deploy' in config.features %}
+  - deploy
+{% endif %}
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+# Build stage
+build:
+  stage: build
+  image: maven:{{ config.language.version | default("17") }}-eclipse-temurin
+  script:
+    - mvn $MAVEN_OPTS clean package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 week
+  cache:
+    paths:
+      - .m2/repository
+
+# Test stage
+test:
+  stage: test
+  image: maven:{{ config.language.version | default("17") }}-eclipse-temurin
+  script:
+    - mvn $MAVEN_OPTS test
+  artifacts:
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+    expire_in: 1 week
+
+# Code quality analysis
+analyze:
+  stage: analyze
+  image: maven:{{ config.language.version | default("17") }}-eclipse-temurin
+  script:
+    - mvn $MAVEN_OPTS verify
+    - mvn $MAVEN_OPTS jacoco:report
+  artifacts:
+    paths:
+      - target/site/jacoco
+    expire_in: 1 week
+  coverage: '/Total.*?([0-9]{1,3})%/'
+
+{% if 'sonarqube' in config.features %}
+# SonarQube analysis
+sonarqube:
+  stage: analyze
+  image: maven:{{ config.language.version | default("17") }}-eclipse-temurin
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+  script:
+    - mvn $MAVEN_OPTS sonar:sonar
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  only:
+    - main
+    - develop
+{% endif %}
+
+{% if 'docker' in config.features %}
+# Build Docker image
+docker-build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG -t $CI_REGISTRY_IMAGE:latest .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE:latest
+  only:
+    - main
+    - develop
+    - /^release-.*$/
+{% endif %}
+
+{% if 'deploy' in config.features %}
+# Deploy to staging
+deploy-staging:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying application to staging environment"
+    # Add deployment steps here
+  environment:
+    name: staging
+  only:
+    - develop
+
+# Deploy to production
+deploy-production:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying application to production environment"
+    # Add deployment steps here
+  environment:
+    name: production
+  when: manual
+  only:
+    - main
+    - /^release-.*$/
+{% endif %}

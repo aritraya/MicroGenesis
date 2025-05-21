@@ -1,0 +1,82 @@
+# {{ project_name }}
+
+{{ description }}
+
+## Getting Started
+
+These instructions will help you set up and run the project on your local machine.
+
+### Prerequisites
+
+- {% if language.name == 'java' %}Java {{ language.version }}{% elif language.name == 'kotlin' %}Kotlin {{ language.version }}{% endif %}
+- {% if build_system.name == 'maven' %}Maven{% elif build_system.name == 'gradle' %}Gradle{% endif %}
+{% if database.name %}
+- {{ database.name|capitalize }} database
+{% endif %}
+
+### Installing
+
+1. Clone the repository
+
+```
+git clone <repository-url>
+cd {{ project_name }}
+```
+
+2. Build the project
+
+{% if build_system.name == 'maven' %}
+```
+mvn clean install
+```
+{% elif build_system.name == 'gradle' %}
+```
+./gradlew build
+```
+{% endif %}
+
+3. Run the application
+
+{% if build_system.name == 'maven' %}
+```
+mvn {% if framework.name == 'spring-boot' %}spring-boot:run{% elif framework.name == 'micronaut' %}mn:run{% endif %}
+```
+{% elif build_system.name == 'gradle' %}
+```
+./gradlew run
+```
+{% endif %}
+
+{% if 'swagger' in features %}
+## API Documentation
+
+The API documentation is available at:
+
+- http://localhost:8080{% if framework.name == 'spring-boot' %}/swagger-ui.html{% elif framework.name == 'micronaut' %}/swagger/views/swagger-ui{% endif %}
+{% endif %}
+
+{% if database.name %}
+## Database
+
+This project uses {{ database.name|capitalize }} for data storage.
+
+### Configuration
+
+The database configuration can be found in:
+{% if framework.name == 'spring-boot' and 'yaml-config' not in features %}
+- `src/main/resources/application.properties`
+{% else %}
+- `src/main/resources/application.yml`
+{% endif %}
+{% endif %}
+
+## Built With
+
+* [{% if framework.name == 'spring-boot' %}Spring Boot{% elif framework.name == 'micronaut' %}Micronaut{% elif framework.name == 'graphql' %}GraphQL{% endif %}]({% if framework.name == 'spring-boot' %}https://spring.io/projects/spring-boot{% elif framework.name == 'micronaut' %}https://micronaut.io{% elif framework.name == 'graphql' %}https://graphql.org{% endif %}) - The web framework used
+* [{% if build_system.name == 'maven' %}Maven{% elif build_system.name == 'gradle' %}Gradle{% endif %}]({% if build_system.name == 'maven' %}https://maven.apache.org/{% elif build_system.name == 'gradle' %}https://gradle.org/{% endif %}) - Dependency Management
+
+## Additional Features
+
+{% for feature in features %}
+- {{ feature|capitalize }}
+{% endfor %}

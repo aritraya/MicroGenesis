@@ -33,10 +33,9 @@ setup(
     install_requires=requirements,
     extras_require={
         "dev": dev_requirements,
-    },
-    entry_points={
+    },    entry_points={
         "console_scripts": [
-            "microgenesis=microgenesis.main:main",
+            "microgenesis=core.main:main",
         ],
     },
     include_package_data=True,

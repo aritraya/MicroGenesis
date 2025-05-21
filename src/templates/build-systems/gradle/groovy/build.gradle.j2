@@ -1,0 +1,83 @@
+plugins {
+    id 'org.springframework.boot' version '{{ framework.version }}'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id 'jacoco'
+    {% if features is defined and 'docker' in features %}
+    id 'com.palantir.docker' version '0.25.0'
+    {% endif %}
+}
+
+group = '{{ base_package }}'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '{{ language.version }}'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    {% if features is defined and 'validation' in features %}
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    {% endif %}
+    {% if features is defined and 'security' in features %}
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    {% endif %}
+    {% if features is defined and 'actuator' in features %}
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    {% endif %}
+    {% if features is defined and 'swagger' in features %}
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.9'
+    {% endif %}
+
+    {% if database.name == 'mysql' %}
+    runtimeOnly 'mysql:mysql-connector-java'
+    {% elif database.name == 'postgresql' %}
+    runtimeOnly 'org.postgresql:postgresql'
+    {% elif database.name == 'h2' %}
+    runtimeOnly 'com.h2database:h2'
+    {% elif database.name == 'mongodb' %}
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    {% endif %}
+    
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    {% if features is defined and 'security' in features %}
+    testImplementation 'org.springframework.security:spring-security-test'
+    {% endif %}
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
+    }
+}
+
+{% if features is defined and 'docker' in features %}
+docker {
+    name "{{ project_name | lower }}:${project.version}"
+    dockerfile file('Dockerfile')
+    files bootJar.archiveFile
+    buildArgs([
+        'JAR_FILE': "${bootJar.archiveFileName.get()}"
+    ])
+}
+{% endif %}
