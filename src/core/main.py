@@ -166,11 +166,22 @@ def get_config_from_file(config_file: str) -> Dict[str, Any]:
         Dict[str, Any]: Configuration dictionary
     """
     try:
-        # Create a temporary Config instance with this specific file
-        temp_config = Config(config_path=config_file)
-        
-        # Return a copy of the loaded configuration data
-        return temp_config.config_data.copy()
+        # Check if the file exists
+        if not os.path.exists(config_file):
+            logger.error(f"Configuration file not found: {config_file}")
+            return {}
+            
+        # Directly load the file based on its extension
+        file_extension = os.path.splitext(config_file)[1].lower()
+        with open(config_file, 'r') as f:
+            if file_extension == '.json':
+                return json.load(f)
+            elif file_extension in ['.yaml', '.yml']:
+                import yaml
+                return yaml.safe_load(f)
+            else:
+                # Default to JSON
+                return json.load(f)
     except Exception as e:
         logger.error(f"Error loading configuration file: {e}")
         return {}
@@ -338,13 +349,35 @@ def prepare_config(args) -> Dict[str, Any]:
     if args.config_file:
         file_config = get_config_from_file(args.config_file)
         config = merge_configs(config, file_config)
+        
+        # Ensure framework and language are properly formatted
+        if "framework" in config and isinstance(config["framework"], str):
+            framework_name = config["framework"]
+            framework_version = config.get("framework_version", "latest")
+            config["framework"] = {
+                "name": framework_name,
+                "version": framework_version
+            }
+            # Remove the separate version key if it exists
+            if "framework_version" in config:
+                del config["framework_version"]
+        
+        if "language" in config and isinstance(config["language"], str):
+            language_name = config["language"]
+            language_version = config.get("language_version", "latest")
+            config["language"] = {
+                "name": language_name,
+                "version": language_version
+            }
+            # Remove the separate version key if it exists
+            if "language_version" in config:
+                del config["language_version"]
     
     # Interactive mode
     if args.interactive:
         interactive_config = prompt_for_config()
         config = merge_configs(config, interactive_config)
-    
-    # Command line arguments override
+      # Command line arguments override
     cli_config = {}
     
     if args.project_name:
@@ -391,8 +424,8 @@ def prepare_config(args) -> Dict[str, Any]:
     
     if args.swagger_file:
         cli_config["swagger_file"] = args.swagger_file
-      if args.schema_mapping:
-        cli_config["schema_mapping"] = args.schema_mapping
+        if args.schema_mapping:
+            cli_config["schema_mapping"] = args.schema_mapping
         
     if args.ddl_file:
         cli_config["ddl_file"] = args.ddl_file
@@ -423,14 +456,26 @@ def validate_config(config: Dict[str, Any]) -> List[str]:
     if not config.get("base_package"):
         errors.append("Base package is required")
     
-    if not config.get("framework", {}).get("name"):
+    # Check framework (handle both object and string formats)
+    framework = config.get("framework")
+    if not framework:
         errors.append("Framework is required")
+    elif isinstance(framework, dict) and not framework.get("name"):
+        errors.append("Framework name is required")
     
-    if not config.get("language", {}).get("name"):
+    # Check language (handle both object and string formats)
+    language = config.get("language")
+    if not language:
         errors.append("Language is required")
+    elif isinstance(language, dict) and not language.get("name"):
+        errors.append("Language name is required")
     
-    if not config.get("build_system", {}).get("name"):
+    # Check build system (handle both object and string formats)
+    build_system = config.get("build_system")
+    if not build_system:
         errors.append("Build system is required")
+    elif isinstance(build_system, dict) and not build_system.get("name"):
+        errors.append("Build system name is required")
     
     # Validate swagger file path if specified
     swagger_file = config.get("swagger_file")
@@ -441,6 +486,11 @@ def validate_config(config: Dict[str, Any]) -> List[str]:
     schema_mapping = config.get("schema_mapping")
     if schema_mapping and not os.path.exists(schema_mapping):
         errors.append(f"Schema mapping file not found: {schema_mapping}")
+    
+    # Validate DDL file path if specified
+    ddl_file = config.get("ddl_file")
+    if ddl_file and not os.path.exists(ddl_file):
+        errors.append(f"DDL file not found: {ddl_file}")
     
     return errors
 
@@ -479,10 +529,14 @@ def main():
             print("\nNext steps:")
             print(f"  1. Navigate to the project directory: cd {project_dir}")
             
-            if config.get("build_system", {}).get("name") == "maven":
+            # Handle both format types for build_system
+            build_system = config.get("build_system")
+            build_system_name = build_system.get("name") if isinstance(build_system, dict) else build_system
+            
+            if build_system_name == "maven":
                 print("  2. Build the project: mvn clean install")
                 print("  3. Run the application: mvn spring-boot:run")
-            elif config.get("build_system", {}).get("name") == "gradle":
+            elif build_system_name == "gradle":
                 print("  2. Build the project: ./gradlew build")
                 print("  3. Run the application: ./gradlew bootRun")
             

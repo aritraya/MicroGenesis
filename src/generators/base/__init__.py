@@ -232,7 +232,6 @@ class BaseGenerator(ABC):
         
         with open(os.path.join(docs_dir, "GETTING-STARTED.md"), "w") as f:
             f.write(getting_started_content)
-    
     def render_template(self, template_name: str, context: Dict[str, Any]) -> str:
         """Render a template with the given context.
         
@@ -245,6 +244,21 @@ class BaseGenerator(ABC):
         """
         template = self.template_env.get_template(template_name)
         return template.render(**context)
+    
+    def get_safe_database_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Get the database configuration, ensuring it's a dictionary.
+        
+        Args:
+            config: Configuration dictionary
+            
+        Returns:
+            Dict[str, Any]: Database configuration as a dictionary
+        """
+        database = config.get("database", {})
+        if not isinstance(database, dict):
+            # Convert string to dict format
+            return {"name": database}
+        return database
     
     def parse_swagger_file(self, swagger_path: str) -> Dict[str, Any]:
         """Parse an OpenAPI/Swagger file and extract API information.

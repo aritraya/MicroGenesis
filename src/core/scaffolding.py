@@ -22,7 +22,7 @@ class ScaffoldingEngine:
         """
         self.output_dir = output_dir
         self.logger = get_logger()
-        
+    
     def generate_project(self, config: Dict[str, Any]) -> str:
         """Generate a project based on the provided configuration.
         
@@ -37,12 +37,40 @@ class ScaffoldingEngine:
         # Extract basic project info
         project_name = config.get("project_name", "app")
         base_package = config.get("base_package", "com.example")
-        language = config.get("language", {}).get("name", "java")
-        language_version = config.get("language", {}).get("version", "11")
-        framework = config.get("framework", {}).get("name", "spring-boot")
-        framework_version = config.get("framework", {}).get("version", "2.7.0")
+        
+        # Handle different formats for language (flat or nested)
+        language_config = config.get("language", {})
+        if isinstance(language_config, dict):
+            language = language_config.get("name", "java")
+            language_version = language_config.get("version", "11")
+        else:
+            language = language_config or "java"
+            language_version = config.get("language_version", "11")
+        
+        # Handle different formats for framework (flat or nested)
+        framework_config = config.get("framework", {})
+        if isinstance(framework_config, dict):
+            framework = framework_config.get("name", "spring-boot")
+            framework_version = framework_config.get("version", "2.7.0")
+        else:
+            framework = framework_config or "spring-boot"
+            framework_version = config.get("framework_version", "2.7.0")
+        
         service_type = config.get("service_type", "domain-driven")
-        build_system = config.get("build_system", {}).get("name", "maven")
+        
+        # Handle different formats for build system (flat or nested)
+        build_system_config = config.get("build_system", {})
+        if isinstance(build_system_config, dict):
+            build_system = build_system_config.get("name", "maven")
+        else:
+            build_system = build_system_config or "maven"
+            
+        # Handle different formats for database (flat or nested)
+        database_config = config.get("database", {})
+        if not isinstance(database_config, dict):
+            # Convert string to dict format
+            database_name = database_config
+            config["database"] = {"name": database_name}
         
         # Create project directory
         if not self.output_dir:

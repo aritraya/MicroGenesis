@@ -32,7 +32,6 @@ class SpringBootJavaGenerator(BaseGenerator):
             self._generate_gradle_config(project_dir, config)
         else:
             self.logger.warning(f"Unsupported build system: {build_system}")
-    
     def _generate_maven_config(self, project_dir: str, config: Dict[str, Any]) -> None:
         """Generate Maven configuration (pom.xml).
         
@@ -40,6 +39,9 @@ class SpringBootJavaGenerator(BaseGenerator):
             project_dir: Target directory for the generated project
             config: Project configuration dictionary
         """
+        # Get safe database config
+        database_config = self.get_safe_database_config(config)
+        
         # Prepare context for template rendering
         context = {
             "project": config.get("project_name", "app"),
@@ -49,7 +51,7 @@ class SpringBootJavaGenerator(BaseGenerator):
             "spring_boot_version": config.get("framework", {}).get("version", "2.7.0"),
             "java_version": config.get("language", {}).get("version", "11"),
             "description": config.get("description", "Generated Spring Boot application"),
-            "database": config.get("database", {}).get("name", ""),
+            "database": database_config.get("name", ""),
             "features": config.get("features", []),
         }
         
@@ -57,7 +59,6 @@ class SpringBootJavaGenerator(BaseGenerator):
         pom_content = self.render_template("spring-boot/pom.xml.j2", context)
         with open(os.path.join(project_dir, "pom.xml"), "w") as f:
             f.write(pom_content)
-    
     def _generate_gradle_config(self, project_dir: str, config: Dict[str, Any]) -> None:
         """Generate Gradle configuration (build.gradle).
         
@@ -65,6 +66,9 @@ class SpringBootJavaGenerator(BaseGenerator):
             project_dir: Target directory for the generated project
             config: Project configuration dictionary
         """
+        # Get safe database config
+        database_config = self.get_safe_database_config(config)
+        
         # Prepare context for template rendering
         context = {
             "project": config.get("project_name", "app"),
@@ -74,7 +78,7 @@ class SpringBootJavaGenerator(BaseGenerator):
             "spring_boot_version": config.get("framework", {}).get("version", "2.7.0"),
             "java_version": config.get("language", {}).get("version", "11"),
             "description": config.get("description", "Generated Spring Boot application"),
-            "database": config.get("database", {}).get("name", ""),
+            "database": database_config.get("name", ""),
             "features": config.get("features", []),
         }
         
@@ -124,14 +128,12 @@ class SpringBootJavaGenerator(BaseGenerator):
         
         # Create standard directories
         for dir_name in ["controller", "service", "repository", "model", "dto", "config", "exception"]:
-            os.makedirs(os.path.join(src_main_java, dir_name), exist_ok=True)
-        
-        # Context for template rendering
+            os.makedirs(os.path.join(src_main_java, dir_name), exist_ok=True)        # Context for template rendering
         context = {
             "base_package": base_package,
             "project_name": project_name,
             "application_name": self._to_pascal_case(project_name) + "Application",
-            "database": config.get("database", {}),
+            "database": self.get_safe_database_config(config),
             "features": config.get("features", []),
             "service_type": config.get("service_type", "domain-driven"),
         }

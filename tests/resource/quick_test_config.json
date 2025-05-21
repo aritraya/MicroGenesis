@@ -20,9 +20,9 @@
   ],
   
   "service_type": "domain-driven",
-  "ddl_file": "tests/resource/domain_driven_schema.sql",
-  "schema_mapping": "tests/resource/domain_driven_schema_mapping.json",
-  "swagger_file": "tests/resource/domain_driven_service.yaml",
+  "ddl_file": "tests/resource/domain_driven/schema.sql",
+  "schema_mapping": "tests/resource/domain_driven/schema_mapping.json",
+  "swagger_file": "tests/resource/domain_driven/service.yaml",
   
   "output_dir": "./quick-test-output"
 }
