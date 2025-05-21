@@ -13,8 +13,8 @@ MicroGenesis is a powerful code scaffolding tool that generates application code
 - DDL import for database schemas
 - Project history and quick access to recent projects
 
-- Generate project structures for Spring Boot, Micronaut, and GraphQL
-- Support for multiple languages (Java, Kotlin)
+- Generate project structures for Spring Boot, Micronaut, and GraphQL (Java/Kotlin)
+- Support for multiple languages (Java, Kotlin) across all frameworks
 - Build system configuration (Maven, Gradle)
 - CI/CD pipeline setup (GitHub Actions, Jenkins, Azure DevOps, GitLab CI)
 - Database integration (MySQL, PostgreSQL, H2, MongoDB)
@@ -125,6 +125,30 @@ pip install -e ".[dev]"
 ```bash
 python tests/run_tests.py
 ```
+
+## Supported Implementations
+
+| Framework   | Java | Kotlin |
+|-------------|------|--------|
+| Spring Boot | ✅    | ✅      |
+| Micronaut   | ✅    | ✅      |
+| GraphQL     | ✅    | ✅      |
+
+### Architecture Patterns
+
+| Pattern Type        | Support |
+|---------------------|---------|
+| Domain-Driven       | ✅       |
+| Entity-Driven       | ✅       |
+| Technical-Layered   | ✅       |
+| Data-Driven         | ✅       |
+| Function-Oriented   | ✅       |
+
+For more details on specific architectures, see:
+- [Domain-Driven Architecture](docs/DOMAIN_DRIVEN_ARCHITECTURE.md)
+- [Entity-Driven Architecture](docs/ENTITY_DRIVEN_ARCHITECTURE.md) 
+- [Technical-Layered Architecture](docs/TECHNICAL_LAYERED_ARCHITECTURE.md)
+- [GraphQL Kotlin Architecture](docs/GRAPHQL_KOTLIN_ARCHITECTURE.md)
 
 ## Extending MicroGenesis
 
