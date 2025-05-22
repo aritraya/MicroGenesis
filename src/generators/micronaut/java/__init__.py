@@ -24,7 +24,7 @@ class MicronautJavaGenerator(BaseGenerator):
             project_dir: Target directory for the generated project
             config: Project configuration dictionary
         """
-        build_system = config.get("build_system", {}).get("name", "gradle")
+        build_system = config.get("build_system", "gradle")
         
         if build_system == "maven":
             self._generate_maven_config(project_dir, config)
@@ -52,9 +52,8 @@ class MicronautJavaGenerator(BaseGenerator):
             "database": config.get("database", {}).get("name", ""),
             "features": config.get("features", []),
         }
-        
-        # Render pom.xml template
-        pom_content = self.render_template("micronaut/pom.xml.j2", context)
+          # Render pom.xml template
+        pom_content = self.render_template("build-systems/maven/pom.xml.j2", context)
         with open(os.path.join(project_dir, "pom.xml"), "w") as f:
             f.write(pom_content)
     
@@ -77,30 +76,28 @@ class MicronautJavaGenerator(BaseGenerator):
             "database": config.get("database", {}).get("name", ""),
             "features": config.get("features", []),
         }
-        
-        # Render build.gradle template
-        build_gradle_content = self.render_template("micronaut/build.gradle.j2", context)
+          # Render build.gradle template
+        build_gradle_content = self.render_template("build-systems/gradle/groovy/build.gradle.j2", context)
         with open(os.path.join(project_dir, "build.gradle"), "w") as f:
             f.write(build_gradle_content)
         
         # Render settings.gradle template
-        settings_gradle_content = self.render_template("micronaut/settings.gradle.j2", context)
+        settings_gradle_content = self.render_template("build-systems/gradle/groovy/settings.gradle.j2", context)
         with open(os.path.join(project_dir, "settings.gradle"), "w") as f:
             f.write(settings_gradle_content)
         
         # Add Gradle wrapper
         gradle_wrapper_dir = os.path.join(project_dir, "gradle", "wrapper")
         os.makedirs(gradle_wrapper_dir, exist_ok=True)
-        
-        gradle_wrapper_props = self.render_template("micronaut/gradle-wrapper.properties.j2", context)
+        gradle_wrapper_props = self.render_template("build-systems/gradle/gradle-wrapper.properties.j2", context)
         with open(os.path.join(gradle_wrapper_dir, "gradle-wrapper.properties"), "w") as f:
             f.write(gradle_wrapper_props)
         
-        gradlew_content = self.render_template("micronaut/gradlew.j2", {})
+        gradlew_content = self.render_template("build-systems/gradle/gradlew.j2", {})
         with open(os.path.join(project_dir, "gradlew"), "w") as f:
             f.write(gradlew_content)
         
-        gradlew_bat_content = self.render_template("micronaut/gradlew.bat.j2", {})
+        gradlew_bat_content = self.render_template("build-systems/gradle/gradlew.bat.j2", {})
         with open(os.path.join(project_dir, "gradlew.bat"), "w") as f:
             f.write(gradlew_bat_content)
     
@@ -135,9 +132,8 @@ class MicronautJavaGenerator(BaseGenerator):
             "features": config.get("features", []),
             "service_type": config.get("service_type", "domain-driven"),
         }
-        
-        # Generate application class
-        app_class_content = self.render_template("micronaut/java/Application.java.j2", context)
+          # Generate application class
+        app_class_content = self.render_template("frameworks/micronaut/java/Application.java.j2", context)
         with open(os.path.join(src_main_java, f"{context['application_name']}.java"), "w") as f:
             f.write(app_class_content)
         
@@ -180,14 +176,13 @@ class MicronautJavaGenerator(BaseGenerator):
             "project_name": project_name,
             "application_name": self._to_pascal_case(project_name) + "Application",
         }
-        
-        # Generate application tests
-        app_test_content = self.render_template("micronaut/java/ApplicationTest.java.j2", context)
+          # Generate application tests
+        app_test_content = self.render_template("frameworks/micronaut/java/ApplicationTest.java.j2", context)
         with open(os.path.join(src_test_java, f"{context['application_name']}Test.java"), "w") as f:
             f.write(app_test_content)
         
         # Generate test configuration
-        test_properties = self.render_template("micronaut/resources/application-test.yml.j2", context)
+        test_properties = self.render_template("frameworks/micronaut/resources/application-test.yml.j2", context)
         with open(os.path.join(src_test_resources, "application-test.yml"), "w") as f:
             f.write(test_properties)
         
@@ -203,15 +198,14 @@ class MicronautJavaGenerator(BaseGenerator):
             resources_dir: Resources directory path
             context: Template rendering context
             config: Project configuration dictionary
-        """
-        # Micronaut typically uses YAML for configuration
-        app_config = self.render_template("micronaut/resources/application.yml.j2", context)
+        """        # Micronaut typically uses YAML for configuration
+        app_config = self.render_template("frameworks/micronaut/resources/application.yml.j2", context)
         with open(os.path.join(resources_dir, "application.yml"), "w") as f:
             f.write(app_config)
         
         # Generate logback configuration if needed
         if any(feature == "logging" for feature in config.get("features", [])):
-            logback_config = self.render_template("micronaut/resources/logback.xml.j2", context)
+            logback_config = self.render_template("frameworks/micronaut/resources/logback.xml.j2", context)
             with open(os.path.join(resources_dir, "logback.xml"), "w") as f:
                 f.write(logback_config)
     
@@ -262,9 +256,8 @@ class MicronautJavaGenerator(BaseGenerator):
             if model_info["type"] == "entity":
                 # Prepare model context
                 model_context = {**context, "model": model_info}
-                
-                # Generate entity class
-                entity_content = self.render_template("micronaut/java/Entity.java.j2", model_context)
+                  # Generate entity class
+                entity_content = self.render_template("frameworks/micronaut/java/Entity.java.j2", model_context)
                 with open(os.path.join(domain_dir, f"{model_name}.java"), "w") as f:
                     f.write(entity_content)
     
@@ -283,9 +276,8 @@ class MicronautJavaGenerator(BaseGenerator):
             if model_info["type"] == "dto" or any(feature == "generate-dtos" for feature in config.get("features", [])):
                 # Prepare DTO context
                 dto_context = {**context, "dto": model_info}
-                
-                # Generate DTO class
-                dto_content = self.render_template("micronaut/java/DTO.java.j2", dto_context)
+                  # Generate DTO class
+                dto_content = self.render_template("frameworks/micronaut/java/DTO.java.j2", dto_context)
                 with open(os.path.join(dto_dir, f"{model_name}.java"), "w") as f:
                     f.write(dto_content)
     
@@ -320,9 +312,8 @@ class MicronautJavaGenerator(BaseGenerator):
                 "tag": tag,
                 "endpoints": endpoints
             }
-            
-            # Generate controller class
-            controller_content = self.render_template("micronaut/java/Controller.java.j2", controller_context)
+              # Generate controller class
+            controller_content = self.render_template("frameworks/micronaut/java/Controller.java.j2", controller_context)
             with open(os.path.join(controller_dir, f"{controller_name}.java"), "w") as f:
                 f.write(controller_content)
     
@@ -365,14 +356,13 @@ class MicronautJavaGenerator(BaseGenerator):
                 "endpoints": endpoints,
                 "service_type": service_type
             }
-            
-            # Generate service interface
-            service_content = self.render_template("micronaut/java/Service.java.j2", service_context)
+              # Generate service interface
+            service_content = self.render_template("frameworks/micronaut/java/Service.java.j2", service_context)
             with open(os.path.join(service_dir, f"{service_name}.java"), "w") as f:
                 f.write(service_content)
             
             # Generate service implementation
-            impl_content = self.render_template("micronaut/java/ServiceImpl.java.j2", service_context)
+            impl_content = self.render_template("frameworks/micronaut/java/ServiceImpl.java.j2", service_context)
             with open(os.path.join(impl_dir, f"{impl_name}.java"), "w") as f:
                 f.write(impl_content)
     
@@ -395,9 +385,8 @@ class MicronautJavaGenerator(BaseGenerator):
                     "model": model_info,
                     "repository_name": f"{model_name}Repository"
                 }
-                
-                # Generate repository interface
-                repo_content = self.render_template("micronaut/java/Repository.java.j2", repo_context)
+                  # Generate repository interface
+                repo_content = self.render_template("frameworks/micronaut/java/Repository.java.j2", repo_context)
                 with open(os.path.join(repo_dir, f"{repo_context['repository_name']}.java"), "w") as f:
                     f.write(repo_content)
     
@@ -433,9 +422,8 @@ class MicronautJavaGenerator(BaseGenerator):
                         "entity_name": entity_name,
                         "dto_name": dto_name
                     }
-                    
-                    # Generate mapper class - Micronaut usually uses Mapstruct
-                    mapper_content = self.render_template("micronaut/java/Mapper.java.j2", mapper_context)
+                      # Generate mapper class - Micronaut usually uses Mapstruct
+                    mapper_content = self.render_template("frameworks/micronaut/java/Mapper.java.j2", mapper_context)
                     with open(os.path.join(mapper_dir, f"{mapper_context['mapper_name']}.java"), "w") as f:
                         f.write(mapper_content)
     
@@ -475,9 +463,8 @@ class MicronautJavaGenerator(BaseGenerator):
                 "tag": tag,
                 "endpoints": endpoints
             }
-            
-            # Generate controller test class
-            test_content = self.render_template("micronaut/java/ControllerTest.java.j2", test_context)
+              # Generate controller test class
+            test_content = self.render_template("frameworks/micronaut/java/ControllerTest.java.j2", test_context)
             with open(os.path.join(controller_test_dir, f"{test_name}.java"), "w") as f:
                 f.write(test_content)
         
@@ -495,9 +482,8 @@ class MicronautJavaGenerator(BaseGenerator):
                 "tag": tag,
                 "endpoints": endpoints
             }
-            
-            # Generate service test class
-            test_content = self.render_template("micronaut/java/ServiceTest.java.j2", test_context)
+              # Generate service test class
+            test_content = self.render_template("frameworks/micronaut/java/ServiceTest.java.j2", test_context)
             with open(os.path.join(service_test_dir, f"{test_name}.java"), "w") as f:
                 f.write(test_content)
     
@@ -508,22 +494,20 @@ class MicronautJavaGenerator(BaseGenerator):
             src_dir: Source directory for generated code
             context: Template rendering context
             config: Project configuration dictionary
-        """
-        # Create sample domain class
+        """        # Create sample domain class
         domain_dir = os.path.join(src_dir, "domain")
-        sample_entity = self.render_template("micronaut/java/SampleEntity.java.j2", context)
+        sample_entity = self.render_template("frameworks/micronaut/java/SampleEntity.java.j2", context)
         with open(os.path.join(domain_dir, "SampleEntity.java"), "w") as f:
             f.write(sample_entity)
         
         # Create sample DTO
         dto_dir = os.path.join(src_dir, "dto")
-        sample_dto = self.render_template("micronaut/java/SampleDTO.java.j2", context)
+        sample_dto = self.render_template("frameworks/micronaut/java/SampleDTO.java.j2", context)
         with open(os.path.join(dto_dir, "SampleDTO.java"), "w") as f:
             f.write(sample_dto)
-        
-        # Create sample controller
+          # Create sample controller
         controller_dir = os.path.join(src_dir, "controller")
-        sample_controller = self.render_template("micronaut/java/SampleController.java.j2", context)
+        sample_controller = self.render_template("frameworks/micronaut/java/SampleController.java.j2", context)
         with open(os.path.join(controller_dir, "SampleController.java"), "w") as f:
             f.write(sample_controller)
         
@@ -532,17 +516,17 @@ class MicronautJavaGenerator(BaseGenerator):
         impl_dir = os.path.join(service_dir, "impl")
         os.makedirs(impl_dir, exist_ok=True)
         
-        sample_service = self.render_template("micronaut/java/SampleService.java.j2", context)
+        sample_service = self.render_template("frameworks/micronaut/java/SampleService.java.j2", context)
         with open(os.path.join(service_dir, "SampleService.java"), "w") as f:
             f.write(sample_service)
         
-        sample_service_impl = self.render_template("micronaut/java/SampleServiceImpl.java.j2", context)
+        sample_service_impl = self.render_template("frameworks/micronaut/java/SampleServiceImpl.java.j2", context)
         with open(os.path.join(impl_dir, "SampleServiceImpl.java"), "w") as f:
             f.write(sample_service_impl)
         
         # Create sample repository
         repo_dir = os.path.join(src_dir, "repository")
-        sample_repo = self.render_template("micronaut/java/SampleRepository.java.j2", context)
+        sample_repo = self.render_template("frameworks/micronaut/java/SampleRepository.java.j2", context)
         with open(os.path.join(repo_dir, "SampleRepository.java"), "w") as f:
             f.write(sample_repo)
     

@@ -24,7 +24,7 @@ class MicronautKotlinGenerator(BaseGenerator):
             project_dir: Target directory for the generated project
             config: Project configuration dictionary
         """
-        build_system = config.get("build_system", {}).get("name", "gradle")
+        build_system = config.get("build_system", "gradle")
         
         if build_system == "maven":
             self._generate_maven_config(project_dir, config)

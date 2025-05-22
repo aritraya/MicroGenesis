@@ -25,7 +25,7 @@ class SpringBootJavaGenerator(BaseGenerator):
             project_dir: Target directory for the generated project
             config: Project configuration dictionary
         """
-        build_system = config.get("build_system", {}).get("name", "maven")
+        build_system = config.get("build_system", "gradle")
         
         if build_system == "maven":
             self._generate_maven_config(project_dir, config)
@@ -55,9 +55,8 @@ class SpringBootJavaGenerator(BaseGenerator):
             "database": database_config.get("name", ""),
             "features": config.get("features", []),
         }
-        
-        # Render pom.xml template
-        pom_content = self.render_template("spring-boot/pom.xml.j2", context)
+          # Render pom.xml template
+        pom_content = self.render_template("build-systems/maven/pom.xml.j2", context)
         with open(os.path.join(project_dir, "pom.xml"), "w") as f:
             f.write(pom_content)
     def _generate_gradle_config(self, project_dir: str, config: Dict[str, Any]) -> None:
@@ -82,30 +81,28 @@ class SpringBootJavaGenerator(BaseGenerator):
             "database": database_config.get("name", ""),
             "features": config.get("features", []),
         }
-        
-        # Render build.gradle template
-        build_gradle_content = self.render_template("spring-boot/build.gradle.j2", context)
+          # Render build.gradle template
+        build_gradle_content = self.render_template("build-systems/gradle/groovy/build.gradle.j2", context)
         with open(os.path.join(project_dir, "build.gradle"), "w") as f:
             f.write(build_gradle_content)
         
         # Render settings.gradle template
-        settings_gradle_content = self.render_template("spring-boot/settings.gradle.j2", context)
+        settings_gradle_content = self.render_template("build-systems/gradle/groovy/settings.gradle.j2", context)
         with open(os.path.join(project_dir, "settings.gradle"), "w") as f:
             f.write(settings_gradle_content)
-        
-        # Add Gradle wrapper
+          # Add Gradle wrapper
         gradle_wrapper_dir = os.path.join(project_dir, "gradle", "wrapper")
         os.makedirs(gradle_wrapper_dir, exist_ok=True)
         
-        gradle_wrapper_props = self.render_template("spring-boot/gradle-wrapper.properties.j2", context)
+        gradle_wrapper_props = self.render_template("build-systems/gradle/wrapper/gradle-wrapper.properties.j2", context)
         with open(os.path.join(gradle_wrapper_dir, "gradle-wrapper.properties"), "w") as f:
             f.write(gradle_wrapper_props)
         
-        gradlew_content = self.render_template("spring-boot/gradlew.j2", {})
+        gradlew_content = self.render_template("build-systems/gradle/wrapper/gradlew.j2", {})
         with open(os.path.join(project_dir, "gradlew"), "w") as f:
             f.write(gradlew_content)
         
-        gradlew_bat_content = self.render_template("spring-boot/gradlew.bat.j2", {})
+        gradlew_bat_content = self.render_template("build-systems/gradle/wrapper/gradlew.bat.j2", {})
         with open(os.path.join(project_dir, "gradlew.bat"), "w") as f:
             f.write(gradlew_bat_content)
     
@@ -143,12 +140,11 @@ class SpringBootJavaGenerator(BaseGenerator):
             "service_type": service_type,
             "package_structure": architecture.get_package_structure()
         }
-        
-        # Add architecture-specific context additions
+          # Add architecture-specific context additions
         context.update(architecture.get_template_context_additions(config))
         
         # Generate application class
-        app_class_content = self.render_template("spring-boot/java/Application.java.j2", context)
+        app_class_content = self.render_template("frameworks/spring-boot/java/Application.java.j2", context)
         with open(os.path.join(src_main_java, f"{context['application_name']}.java"), "w") as f:
             f.write(app_class_content)
         
@@ -159,8 +155,7 @@ class SpringBootJavaGenerator(BaseGenerator):
         swagger_path = config.get("swagger_file")
         if swagger_path:
             self._generate_from_swagger(src_main_java, swagger_path, context, config)
-        else:
-            # Generate sample code
+        else:            # Generate sample code
             self._generate_sample_code(src_main_java, context, config)
     
     def _generate_tests(self, project_dir: str, config: Dict[str, Any]) -> None:
@@ -193,16 +188,15 @@ class SpringBootJavaGenerator(BaseGenerator):
         }
         
         # Generate application tests
-        app_test_content = self.render_template("spring-boot/java/ApplicationTests.java.j2", context)
+        app_test_content = self.render_template("frameworks/spring-boot/java/test/ApplicationTests.java.j2", context)
         with open(os.path.join(src_test_java, f"{context['application_name']}Tests.java"), "w") as f:
             f.write(app_test_content)
         
         # Generate test configuration
-        test_properties = self.render_template("spring-boot/resources/application-test.properties.j2", context)
+        test_properties = self.render_template("frameworks/spring-boot/resources/application-test.properties.j2", context)
         with open(os.path.join(src_test_resources, "application-test.properties"), "w") as f:
             f.write(test_properties)
-        
-        # Generate sample tests
+          # Generate sample tests
         swagger_path = config.get("swagger_file")
         if swagger_path:
             self._generate_tests_from_swagger(src_test_java, swagger_path, context, config)
@@ -219,17 +213,17 @@ class SpringBootJavaGenerator(BaseGenerator):
         use_yaml = any(feature == "yaml-config" for feature in config.get("features", []))
         
         if use_yaml:
-            app_config = self.render_template("spring-boot/resources/application.yml.j2", context)
+            app_config = self.render_template("frameworks/spring-boot/resources/application.yml.j2", context)
             with open(os.path.join(resources_dir, "application.yml"), "w") as f:
                 f.write(app_config)
         else:
-            app_config = self.render_template("spring-boot/resources/application.properties.j2", context)
-            with open(os.path.join(resources_dir, "application.properties"), "w") as f:
+            # Default to YAML if properties template doesn't exist
+            app_config = self.render_template("frameworks/spring-boot/resources/application.yml.j2", context)
+            with open(os.path.join(resources_dir, "application.yml"), "w") as f:
                 f.write(app_config)
-        
-        # Generate logback configuration if needed
+          # Generate logback configuration if needed
         if any(feature == "logging" for feature in config.get("features", [])):
-            logback_config = self.render_template("spring-boot/resources/logback-spring.xml.j2", context)
+            logback_config = self.render_template("frameworks/spring-boot/resources/logback-spring.xml.j2", context)
             with open(os.path.join(resources_dir, "logback-spring.xml"), "w") as f:
                 f.write(logback_config)
     
@@ -280,9 +274,8 @@ class SpringBootJavaGenerator(BaseGenerator):
             if model_info["type"] == "entity":
                 # Prepare model context
                 model_context = {**context, "model": model_info}
-                
-                # Generate entity class
-                entity_content = self.render_template("spring-boot/java/Entity.java.j2", model_context)
+                  # Generate entity class
+                entity_content = self.render_template("frameworks/spring-boot/java/entity/Entity.java.j2", model_context)
                 with open(os.path.join(model_dir, f"{model_name}.java"), "w") as f:
                     f.write(entity_content)
     
@@ -301,9 +294,8 @@ class SpringBootJavaGenerator(BaseGenerator):
             if model_info["type"] == "dto" or any(feature == "generate-dtos" for feature in config.get("features", [])):
                 # Prepare DTO context
                 dto_context = {**context, "dto": model_info}
-                
-                # Generate DTO class
-                dto_content = self.render_template("spring-boot/java/DTO.java.j2", dto_context)
+                  # Generate DTO class
+                dto_content = self.render_template("frameworks/spring-boot/java/dto/DTO.java.j2", dto_context)
                 with open(os.path.join(dto_dir, f"{model_name}.java"), "w") as f:
                     f.write(dto_content)
     
@@ -338,9 +330,8 @@ class SpringBootJavaGenerator(BaseGenerator):
                 "tag": tag,
                 "endpoints": endpoints
             }
-            
-            # Generate controller class
-            controller_content = self.render_template("spring-boot/java/Controller.java.j2", controller_context)
+              # Generate controller class
+            controller_content = self.render_template("frameworks/spring-boot/java/controller/Controller.java.j2", controller_context)
             with open(os.path.join(controller_dir, f"{controller_name}.java"), "w") as f:
                 f.write(controller_content)
     
@@ -379,14 +370,13 @@ class SpringBootJavaGenerator(BaseGenerator):
                 "endpoints": endpoints,
                 "service_type": service_type
             }
-            
-            # Generate service interface
-            service_content = self.render_template("spring-boot/java/Service.java.j2", service_context)
+              # Generate service interface
+            service_content = self.render_template("frameworks/spring-boot/java/service/Service.java.j2", service_context)
             with open(os.path.join(service_dir, f"{service_name}.java"), "w") as f:
                 f.write(service_content)
             
             # Generate service implementation
-            impl_content = self.render_template("spring-boot/java/ServiceImpl.java.j2", service_context)
+            impl_content = self.render_template("frameworks/spring-boot/java/service/ServiceImpl.java.j2", service_context)
             with open(os.path.join(service_dir, "impl", f"{impl_name}.java"), "w") as f:
                 f.write(impl_content)
     
@@ -409,9 +399,8 @@ class SpringBootJavaGenerator(BaseGenerator):
                     "model": model_info,
                     "repository_name": f"{model_name}Repository"
                 }
-                
-                # Generate repository interface
-                repo_content = self.render_template("spring-boot/java/Repository.java.j2", repo_context)
+                  # Generate repository interface
+                repo_content = self.render_template("frameworks/spring-boot/java/repository/Repository.java.j2", repo_context)
                 with open(os.path.join(repo_dir, f"{repo_context['repository_name']}.java"), "w") as f:
                     f.write(repo_content)
     
@@ -447,9 +436,8 @@ class SpringBootJavaGenerator(BaseGenerator):
                         "entity_name": entity_name,
                         "dto_name": dto_name
                     }
-                    
-                    # Generate mapper class
-                    mapper_content = self.render_template("spring-boot/java/Mapper.java.j2", mapper_context)
+                      # Generate mapper class
+                    mapper_content = self.render_template("frameworks/spring-boot/java/mapper/Mapper.java.j2", mapper_context)
                     with open(os.path.join(mapper_dir, f"{mapper_context['mapper_name']}.java"), "w") as f:
                         f.write(mapper_content)
     
@@ -489,9 +477,8 @@ class SpringBootJavaGenerator(BaseGenerator):
                 "tag": tag,
                 "endpoints": endpoints
             }
-            
-            # Generate controller test class
-            test_content = self.render_template("spring-boot/java/ControllerTest.java.j2", test_context)
+              # Generate controller test class
+            test_content = self.render_template("frameworks/spring-boot/java/test/ControllerTest.java.j2", test_context)
             with open(os.path.join(controller_test_dir, f"{test_name}.java"), "w") as f:
                 f.write(test_content)
         
@@ -509,12 +496,10 @@ class SpringBootJavaGenerator(BaseGenerator):
                 "tag": tag,
                 "endpoints": endpoints
             }
-            
-            # Generate service test class
-            test_content = self.render_template("spring-boot/java/ServiceTest.java.j2", test_context)
+              # Generate service test class
+            test_content = self.render_template("frameworks/spring-boot/java/test/ServiceTest.java.j2", test_context)
             with open(os.path.join(service_test_dir, f"{test_name}.java"), "w") as f:
                 f.write(test_content)
-    
     def _generate_sample_code(self, src_dir: str, context: Dict[str, Any], config: Dict[str, Any]) -> None:
         """Generate sample code when no Swagger file is provided.
         
@@ -525,19 +510,18 @@ class SpringBootJavaGenerator(BaseGenerator):
         """
         # Create sample model
         model_dir = os.path.join(src_dir, "model")
-        sample_model = self.render_template("spring-boot/java/SampleEntity.java.j2", context)
+        sample_model = self.render_template("frameworks/spring-boot/java/entity/SampleEntity.java.j2", context)
         with open(os.path.join(model_dir, "SampleEntity.java"), "w") as f:
             f.write(sample_model)
-        
-        # Create sample DTO
+          # Create sample DTO
         dto_dir = os.path.join(src_dir, "dto")
-        sample_dto = self.render_template("spring-boot/java/SampleDTO.java.j2", context)
+        sample_dto = self.render_template("frameworks/spring-boot/java/dto/SampleDTO.java.j2", context)
         with open(os.path.join(dto_dir, "SampleDTO.java"), "w") as f:
             f.write(sample_dto)
         
         # Create sample controller
         controller_dir = os.path.join(src_dir, "controller")
-        sample_controller = self.render_template("spring-boot/java/SampleController.java.j2", context)
+        sample_controller = self.render_template("frameworks/spring-boot/java/controller/SampleController.java.j2", context)
         with open(os.path.join(controller_dir, "SampleController.java"), "w") as f:
             f.write(sample_controller)
         
@@ -546,17 +530,17 @@ class SpringBootJavaGenerator(BaseGenerator):
         impl_dir = os.path.join(service_dir, "impl")
         os.makedirs(impl_dir, exist_ok=True)
         
-        sample_service = self.render_template("spring-boot/java/SampleService.java.j2", context)
+        sample_service = self.render_template("frameworks/spring-boot/java/service/SampleService.java.j2", context)
         with open(os.path.join(service_dir, "SampleService.java"), "w") as f:
             f.write(sample_service)
         
-        sample_service_impl = self.render_template("spring-boot/java/SampleServiceImpl.java.j2", context)
+        sample_service_impl = self.render_template("frameworks/spring-boot/java/service/SampleServiceImpl.java.j2", context)
         with open(os.path.join(impl_dir, "SampleServiceImpl.java"), "w") as f:
             f.write(sample_service_impl)
         
         # Create sample repository
         repo_dir = os.path.join(src_dir, "repository")
-        sample_repo = self.render_template("spring-boot/java/SampleRepository.java.j2", context)
+        sample_repo = self.render_template("frameworks/spring-boot/java/repository/SampleRepository.java.j2", context)
         with open(os.path.join(repo_dir, "SampleRepository.java"), "w") as f:
             f.write(sample_repo)
     
@@ -571,4 +555,59 @@ class SpringBootJavaGenerator(BaseGenerator):
         """
         # Replace non-alphanumeric with spaces, split and join with title case
         result = ''.join(word.capitalize() for word in re.sub('[^0-9a-zA-Z]+', ' ', text).split())
+        return result
+    
+    def _to_camel_case(self, text: str, capitalize_first: bool = True) -> str:
+        """Convert string to camelCase or PascalCase.
+        
+        Args:
+            text: Text to convert
+            capitalize_first: Whether to capitalize the first letter (PascalCase) or not (camelCase)
+            
+        Returns:
+            str: camelCase or PascalCase text
+        """
+        # Replace non-alphanumeric with spaces and split
+        words = re.sub('[^0-9a-zA-Z]+', ' ', text).split()
+        
+        if not words:
+            return ""
+          # Handle first word according to capitalize_first parameter
+        if capitalize_first:
+            result = ''.join(word.capitalize() for word in words)
+        else:
+            result = words[0].lower() + ''.join(word.capitalize() for word in words[1:])
+            
+        return result
+    
+    def _to_snake_case(self, text: str) -> str:
+        """Convert string to snake_case.
+        
+        Args:
+            text: Text to convert
+            
+        Returns:
+            str: snake_case text
+        """
+        # Replace non-alphanumeric with spaces and split
+        words = re.sub('[^0-9a-zA-Z]+', ' ', text).split()
+        
+        # Join with underscore and lowercase
+        result = '_'.join(word.lower() for word in words)
+        return result
+    
+    def _to_kebab_case(self, text: str) -> str:
+        """Convert string to kebab-case.
+        
+        Args:
+            text: Text to convert
+            
+        Returns:
+            str: kebab-case text
+        """
+        # Replace non-alphanumeric with spaces and split
+        words = re.sub('[^0-9a-zA-Z]+', ' ', text).split()
+        
+        # Join with hyphen and lowercase
+        result = '-'.join(word.lower() for word in words)
         return result

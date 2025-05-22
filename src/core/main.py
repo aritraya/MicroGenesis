@@ -99,14 +99,16 @@ def parse_arguments():
         choices=["logging", "swagger", "aws", "data", "config", "integration", "yaml-config", "generate-dtos"],
         help="Additional features to add"
     )
-      # Service type
+    
+    # Service type
     parser.add_argument(
         "--service-type",
         type=str,
         choices=["domain-driven", "entity-driven", "technical-layered", "data-driven", "function-oriented"],
         help="Type of service architecture to generate"
     )
-      # Swagger file
+    
+    # Swagger file
     parser.add_argument(
         "--swagger-file",
         type=str,
@@ -284,7 +286,8 @@ def prompt_for_config() -> Dict[str, Any]:
     features = [feature_options[int(choice) - 1] for choice in feature_choices if 0 < int(choice) <= len(feature_options)]
     
     config["features"] = features
-      # Service type
+    
+    # Service type
     service_options = ["domain-driven", "entity-driven", "technical-layered", "data-driven", "function-oriented"]
     print("\nService architecture type:")
     for i, option in enumerate(service_options):
@@ -299,7 +302,8 @@ def prompt_for_config() -> Dict[str, Any]:
     swagger_file = input("\nPath to Swagger/OpenAPI definition file (optional): ")
     if swagger_file:
         config["swagger_file"] = swagger_file
-      # Schema mapping file
+    
+    # Schema mapping file
     schema_mapping = input("Path to schema relationship mapping file (optional): ")
     if schema_mapping:
         config["schema_mapping"] = schema_mapping
@@ -377,7 +381,8 @@ def prepare_config(args) -> Dict[str, Any]:
     if args.interactive:
         interactive_config = prompt_for_config()
         config = merge_configs(config, interactive_config)
-      # Command line arguments override
+    
+    # Command line arguments override
     cli_config = {}
     
     if args.project_name:
@@ -498,7 +503,8 @@ def main():
     """Run the main application."""
     # Parse command line arguments
     args = parse_arguments()
-      # Show version and exit if requested
+    
+    # Show version and exit if requested
     if args.version:
         from src import __version__
         print(f"MicroGenesis version {__version__}")
@@ -547,10 +553,13 @@ def main():
             print("Run with --interactive for guided setup")
             print("Run with --help to see all options")
             return 0
-            
     except Exception as e:
+        import traceback
         logger.error(f"Error generating project: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         print(f"Error: {e}")
+        print("\nFull traceback:")
+        print(traceback.format_exc())
         return 1
 
 if __name__ == "__main__":

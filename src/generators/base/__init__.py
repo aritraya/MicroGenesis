@@ -3,10 +3,12 @@
 import os
 import shutil
 import json
+import yaml
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 import jinja2
+import re
 
 from src.core.logging import get_logger
 
@@ -37,6 +39,9 @@ class BaseGenerator(ABC):
         self.template_env.filters['pascalcase'] = self._to_pascal_case
         self.template_env.filters['snakecase'] = self._to_snake_case
         self.template_env.filters['kebabcase'] = self._to_kebab_case
+        
+        # Add custom tests
+        self.template_env.tests['match'] = self._match_test
         
     def generate(self, project_dir: str, config: Dict[str, Any]) -> None:
         """Generate a project based on the provided configuration.
@@ -282,7 +287,14 @@ class BaseGenerator(ABC):
         
         try:
             with open(swagger_path, 'r') as f:
-                swagger_data = json.load(f)
+                
+                # Determine the file type and parse accordingly
+                file_extension = os.path.splitext(swagger_path)[1].lower()
+                if file_extension in ['.yaml', '.yml']:
+                    swagger_data = yaml.safe_load(f)
+                else:
+                    swagger_data = json.load(f)
+                
                 
             api_info = {
                 'info': swagger_data.get('info', {}),
@@ -337,3 +349,22 @@ class BaseGenerator(ABC):
         except Exception as e:
             self.logger.error(f"Error parsing Swagger file: {e}")
             return {}
+    
+    def _match_test(self, value: str, pattern: str) -> bool:
+        """Custom test to match a value against a regex pattern.
+        
+        Args:
+            value: The value to test
+            pattern: The regex pattern to match against
+            
+        Returns:
+            bool: True if the value matches the pattern, False otherwise
+        """
+        if not isinstance(value, str) or not isinstance(pattern, str):
+            return False
+        
+        try:
+            regex = re.compile(pattern)
+            return bool(regex.match(value))
+        except re.error:
+            return False
