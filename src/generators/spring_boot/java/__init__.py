@@ -366,6 +366,11 @@ class SpringBootJavaGenerator(BaseGenerator):
             config: Project configuration dictionary
         """
         service_dir = os.path.join(src_dir, "service")
+        impl_dir = os.path.join(service_dir, "impl")
+        # Create service and impl directories
+        os.makedirs(service_dir, exist_ok=True)
+        os.makedirs(impl_dir, exist_ok=True)
+        
         service_type = config.get("service_type", "domain-driven")
         
         # Group endpoints by tag (similar to controllers)
@@ -632,3 +637,179 @@ class SpringBootJavaGenerator(BaseGenerator):
         # Join with hyphen and lowercase
         result = '-'.join(word.lower() for word in words)
         return result
+    
+    def get_architecture_handler(self, config: Dict[str, Any]) -> ServiceArchitecture:
+        """Get the appropriate architecture handler based on configuration.
+        
+        Args:
+            config: Project configuration dictionary
+            
+        Returns:
+            ServiceArchitecture: Handler for the specified architecture
+        """
+        service_type = config.get("service_type", "simple").lower()
+        # Import all architecture handlers
+        from src.generators.architecture import (
+            SimplifiedArchitecture,
+            DomainDrivenArchitecture,
+            TechnicalLayeredArchitecture,
+            DataDrivenArchitecture,
+            FunctionOrientedArchitecture,
+            EntityDrivenArchitecture
+        )
+        
+        # Map service types to architecture handlers
+        architecture_map = {
+            "simple": SimplifiedArchitecture,
+            "domain-driven": DomainDrivenArchitecture,
+            "technical-layered": TechnicalLayeredArchitecture,
+            "data-driven": DataDrivenArchitecture,
+            "function-oriented": FunctionOrientedArchitecture,
+            "entity-driven": EntityDrivenArchitecture
+        }
+        
+        # Get the appropriate architecture handler class
+        architecture_class = architecture_map.get(service_type, SimplifiedArchitecture)
+        
+        # Return an instance of the architecture handler
+        return architecture_class()
+    def parse_swagger_file(self, swagger_path: str) -> Dict[str, Any]:
+        """Parse Swagger/OpenAPI file and extract API information.
+        
+        Args:
+            swagger_path: Path to the Swagger/OpenAPI definition file
+            
+        Returns:
+            Dict[str, Any]: Extracted API information including models and endpoints
+        """
+        import yaml
+        import os
+
+        _, ext = os.path.splitext(swagger_path)
+        
+        with open(swagger_path, "r") as f:
+            if ext.lower() in ['.yaml', '.yml']:
+                swagger_data = yaml.safe_load(f)
+            else:
+                swagger_data = json.load(f)
+        
+        api_info = {
+            "models": {},
+            "endpoints": []
+        }
+        
+        # Parse model definitions (OpenAPI 3.0)
+        components = swagger_data.get("components", {})
+        schemas = components.get("schemas", {})
+        
+        for model_name, schema in schemas.items():
+            # Determine if the model is an entity or DTO based on schema properties
+            is_entity = any(
+                prop.get("x-entity", False) 
+                for prop in schema.get("properties", {}).values()
+            )
+            
+            api_info["models"][model_name] = {
+                "name": model_name,
+                "type": "entity" if is_entity else "dto",
+                "properties": schema.get("properties", {}),
+                "required": schema.get("required", [])
+            }
+        
+        # Parse paths (endpoints)
+        paths = swagger_data.get("paths", {})
+        for path, methods in paths.items():
+            for method, operation in methods.items():
+                if method.lower() not in ["get", "post", "put", "delete", "patch"]:
+                    continue
+                
+                # Extract response type from successful response schemas
+                responses = operation.get("responses", {})
+                success_response = responses.get("200", {}) or responses.get("201", {})
+                response_schema = (
+                    success_response.get("content", {})
+                    .get("application/json", {})
+                    .get("schema", {})
+                )
+                
+                response_type = "void"
+                if response_schema:
+                    if "$ref" in response_schema:
+                        ref = response_schema["$ref"].split("/")[-1]
+                        response_type = ref
+                    elif response_schema.get("type") == "array":
+                        if "$ref" in response_schema.get("items", {}):
+                            ref = response_schema["items"]["$ref"].split("/")[-1]
+                            response_type = f"List<{ref}>"
+                        else:
+                            response_type = f"List<{response_schema['items'].get('type', 'Object')}>"
+                    else:
+                        response_type = response_schema.get("type", "void")
+                
+                # Extract parameters
+                parameters = []
+                for param in operation.get("parameters", []):
+                    param_schema = param.get("schema", {})
+                    param_type = "String"  # Default to String if type not specified
+                    
+                    if "$ref" in param_schema:
+                        ref = param_schema["$ref"].split("/")[-1]
+                        param_type = ref
+                    elif param_schema.get("type") == "array":
+                        if "$ref" in param_schema.get("items", {}):
+                            ref = param_schema["items"]["$ref"].split("/")[-1]
+                            param_type = f"List<{ref}>"
+                        else:
+                            param_type = f"List<{param_schema['items'].get('type', 'Object')}>"
+                    elif "type" in param_schema:
+                        type_mapping = {
+                            "string": "String",
+                            "integer": "Integer",
+                            "number": "Double",
+                            "boolean": "Boolean",
+                            "array": "List",
+                            "object": "Object"
+                        }
+                        param_type = type_mapping.get(param_schema["type"], "String")
+                    
+                    parameters.append({
+                        "name": param["name"],
+                        "type": param_type,
+                        "in": param["in"],
+                        "required": param.get("required", False)
+                    })
+                
+                # Extract request body if present
+                if "requestBody" in operation:
+                    request_schema = (
+                        operation["requestBody"]
+                        .get("content", {})
+                        .get("application/json", {})
+                        .get("schema", {})
+                    )
+                    
+                    if request_schema:
+                        if "$ref" in request_schema:
+                            ref = request_schema["$ref"].split("/")[-1]
+                            parameters.append({
+                                "name": self._to_camel_case(ref, False),
+                                "type": ref,
+                                "in": "body",
+                                "required": True
+                            })
+                
+                endpoint = {
+                    "path": path,
+                    "method": method.upper(),
+                    "operationId": operation.get("operationId", ""),
+                    "tags": operation.get("tags", ["Default"]),
+                    "summary": operation.get("summary", ""),
+                    "parameters": parameters,
+                    "response": {
+                        "type": response_type
+                    }
+                }
+                
+                api_info["endpoints"].append(endpoint)
+        
+        return api_info
