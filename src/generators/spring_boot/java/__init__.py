@@ -81,6 +81,7 @@ class SpringBootJavaGenerator(BaseGenerator):
             "description": config.get("description", "Generated Spring Boot application"),
             "database": database_config.get("name", ""),
             "features": config.get("features", []),
+            "gradle_version": "8.5"  # Latest stable Gradle version at the time
         }
         
         # Render build.gradle template
@@ -115,39 +116,52 @@ class SpringBootJavaGenerator(BaseGenerator):
             project_dir: Target directory for the generated project
             config: Project configuration dictionary
         """
-        base_package = config.get("base_package", "com.example")
-        base_package_path = base_package.replace(".", os.path.sep)
-        project_name = config.get("project_name", "app")
-          # Main source directories
-        src_main_java = os.path.join(project_dir, "src", "main", "java", base_package_path)
-        os.makedirs(src_main_java, exist_ok=True)
-        
+        # Create source code directory structure
+        src_main_java = os.path.join(project_dir, "src", "main", "java")
         src_main_resources = os.path.join(project_dir, "src", "main", "resources")
-        os.makedirs(src_main_resources, exist_ok=True)
         
-        # Get the appropriate architecture implementation
-        service_type = config.get("service_type", "domain-driven")
-        architecture = ServiceArchitecture.get_architecture(service_type)
+        # Convert base package to directory structure
+        package_path = config.get("base_package", "com.example").replace(".", os.sep)
+        base_package_dir = os.path.join(src_main_java, package_path)
         
-        # Create architecture-specific directory structure
-        architecture.create_directory_structure(src_main_java, config)
+        # Create all required directories
+        for path in [
+            os.path.join(base_package_dir, "controller"),
+            os.path.join(base_package_dir, "service"),
+            os.path.join(base_package_dir, "repository"),
+            os.path.join(base_package_dir, "model"),
+            os.path.join(base_package_dir, "dto"),
+            os.path.join(base_package_dir, "config"),
+            os.path.join(src_main_resources, "config"),
+            os.path.join(src_main_resources, "static"),
+            os.path.join(src_main_resources, "templates"),
+        ]:
+            os.makedirs(path, exist_ok=True)
+            
+        # Get architecture handler
+        architecture = self.get_architecture_handler(config)
         
-        # Add architecture-specific context
+        # Determine service type
+        service_type = config.get("service_type", "simple")
+        
+        # Prepare context for template rendering
         context = {
-            "base_package": base_package,
-            "project_name": project_name,
-            "application_name": self._to_pascal_case(project_name) + "Application",
+            "application_name": f"{config.get('project_name', 'Application')}Application",
+            "base_package": config.get("base_package", "com.example"),
+            "description": config.get("description", "Generated Spring Boot application"),
             "database": self.get_safe_database_config(config),
             "features": config.get("features", []),
             "service_type": service_type,
             "package_structure": architecture.get_package_structure()
         }
-          # Add architecture-specific context additions
+        
+        # Add architecture-specific context additions
         context.update(architecture.get_template_context_additions(config))
         
         # Generate application class
         app_class_content = self.render_template("frameworks/spring-boot/java/Application.java.j2", context)
-        with open(os.path.join(src_main_java, f"{context['application_name']}.java"), "w") as f:
+        app_class_path = os.path.join(base_package_dir, f"{context['application_name']}.java")
+        with open(app_class_path, "w") as f:
             f.write(app_class_content)
         
         # Generate configuration
@@ -156,9 +170,10 @@ class SpringBootJavaGenerator(BaseGenerator):
         # Generate models, controllers, services, etc. from swagger if provided
         swagger_path = config.get("swagger_file")
         if swagger_path:
-            self._generate_from_swagger(src_main_java, swagger_path, context, config)
-        else:            # Generate sample code
-            self._generate_sample_code(src_main_java, context, config)
+            self._generate_from_swagger(base_package_dir, swagger_path, context, config)
+        else:
+            # Generate sample code
+            self._generate_sample_code(base_package_dir, context, config)
     
     def _generate_tests(self, project_dir: str, config: Dict[str, Any]) -> None:
         """Generate test files.
@@ -291,12 +306,14 @@ class SpringBootJavaGenerator(BaseGenerator):
             config: Project configuration dictionary
         """
         dto_dir = os.path.join(src_dir, "dto")
+        # Create DTO directory if it doesn't exist
+        os.makedirs(dto_dir, exist_ok=True)
         
         for model_name, model_info in api_info.get("models", {}).items():
             if model_info["type"] == "dto" or any(feature == "generate-dtos" for feature in config.get("features", [])):
                 # Prepare DTO context
                 dto_context = {**context, "dto": model_info}
-                  # Generate DTO class
+                # Generate DTO class
                 dto_content = self.render_template("frameworks/spring-boot/java/dto/DTO.java.j2", dto_context)
                 with open(os.path.join(dto_dir, f"{model_name}.java"), "w") as f:
                     f.write(dto_content)
@@ -311,6 +328,8 @@ class SpringBootJavaGenerator(BaseGenerator):
             config: Project configuration dictionary
         """
         controller_dir = os.path.join(src_dir, "controller")
+        # Create controller directory if it doesn't exist
+        os.makedirs(controller_dir, exist_ok=True)
         
         # Group endpoints by tag
         endpoints_by_tag = {}
