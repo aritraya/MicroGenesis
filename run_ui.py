@@ -7,7 +7,6 @@ This script runs the Streamlit UI for MicroGenesis.
 import os
 import sys
 import subprocess
-from pathlib import Path
 
 def run_ui():
     """Run the Streamlit UI for MicroGenesis."""

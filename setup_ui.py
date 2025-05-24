@@ -7,7 +7,6 @@ import sys
 import subprocess
 import venv
 import argparse
-from pathlib import Path
 import platform
 
 def parse_arguments():

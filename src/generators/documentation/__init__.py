@@ -6,7 +6,6 @@ for projects generated with MicroGenesis.
 
 import os
 from typing import Dict, Any, List
-import markdown
 from jinja2 import Environment, FileSystemLoader
 
 
