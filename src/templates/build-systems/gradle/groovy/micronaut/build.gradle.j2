@@ -1,0 +1,121 @@
+plugins {
+    id 'io.micronaut.application' version '3.7.0'
+    id 'java'
+    id 'jacoco'
+    {% if 'docker' in features %}
+    id 'com.palantir.docker' version '0.25.0'
+    {% endif %}
+}
+
+group = '{{ group_id }}'
+version = '{{ version }}'
+sourceCompatibility = '{{ java_version }}'
+
+repositories {
+    mavenCentral()
+}
+
+micronaut {
+    runtime "netty"
+    testRuntime "junit5"
+    processing {
+        incremental true
+        annotations "{{ base_package }}.*"
+    }
+}
+
+dependencies {
+    // Micronaut Core
+    implementation("io.micronaut:micronaut-inject")
+    implementation("io.micronaut:micronaut-runtime")
+    implementation("io.micronaut:micronaut-http-client")
+    implementation("io.micronaut:micronaut-http-server-netty")
+    implementation("io.micronaut:micronaut-jackson-databind")
+    
+    // Data Access
+    {% if 'data' in features or database %}
+    implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
+    implementation("io.micronaut.sql:micronaut-jdbc-hikari")
+    {% endif %}
+    
+    // Database
+    {% if database %}
+    {% if database == 'mysql' %}
+    runtimeOnly("mysql:mysql-connector-java")
+    {% elif database == 'postgresql' %}
+    runtimeOnly("org.postgresql:postgresql")
+    {% elif database == 'h2' %}
+    runtimeOnly("com.h2database:h2")
+    {% elif database == 'mongodb' %}
+    implementation("io.micronaut.mongodb:micronaut-mongo-reactive")
+    {% endif %}
+    {% endif %}
+    
+    // Validation
+    {% if 'validation' in features %}
+    implementation("io.micronaut:micronaut-validation")
+    {% endif %}
+    
+    // Security
+    {% if 'security' in features %}
+    implementation("io.micronaut.security:micronaut-security")
+    implementation("io.micronaut.security:micronaut-security-jwt")
+    {% endif %}
+    
+    // Documentation
+    {% if 'swagger' in features %}
+    implementation("io.swagger.core.v3:swagger-annotations")
+    implementation("io.micronaut.openapi:micronaut-openapi")
+    annotationProcessor("io.micronaut.openapi:micronaut-openapi")
+    {% endif %}
+    
+    // Utilities
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+    
+    // Logging
+    runtimeOnly("ch.qos.logback:logback-classic")
+    
+    // Testing
+    testImplementation("io.micronaut.test:micronaut-test-junit5")
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine")
+    {% if 'mockito' in features %}
+    testImplementation("org.mockito:mockito-core")
+    testImplementation("org.mockito:mockito-junit-jupiter")
+    {% endif %}
+}
+
+application {
+    mainClass.set("{{ base_package }}.Application")
+}
+
+java {
+    sourceCompatibility = JavaVersion.toVersion("{{ java_version }}")
+    targetCompatibility = JavaVersion.toVersion("{{ java_version }}")
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
+    }
+}
+
+{% if 'docker' in features %}
+docker {
+    name "{{ project_name | lower }}:${project.version}"
+    dockerfile file('Dockerfile')
+    files jar.archiveFile
+    buildArgs([
+        'JAR_FILE': "${jar.archiveFileName.get()}"
+    ])
+}
+{% endif %}

@@ -52,8 +52,8 @@ class MicronautJavaGenerator(BaseGenerator):
             "database": config.get("database", {}).get("name", ""),
             "features": config.get("features", []),
         }
-          # Render pom.xml template
-        pom_content = self.render_template("build-systems/maven/pom.xml.j2", context)
+        # Render pom.xml template
+        pom_content = self.render_template("build-systems/maven/micronaut/pom.xml.j2", context)
         with open(os.path.join(project_dir, "pom.xml"), "w") as f:
             f.write(pom_content)
     

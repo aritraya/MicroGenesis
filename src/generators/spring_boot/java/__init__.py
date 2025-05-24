@@ -26,13 +26,14 @@ class SpringBootJavaGenerator(BaseGenerator):
             config: Project configuration dictionary
         """
         build_system = config.get("build_system", "gradle")
-        
+          
         if build_system == "maven":
             self._generate_maven_config(project_dir, config)
         elif build_system == "gradle":
             self._generate_gradle_config(project_dir, config)
         else:
             self.logger.warning(f"Unsupported build system: {build_system}")
+    
     def _generate_maven_config(self, project_dir: str, config: Dict[str, Any]) -> None:
         """Generate Maven configuration (pom.xml).
         
@@ -43,20 +44,20 @@ class SpringBootJavaGenerator(BaseGenerator):
         # Get safe database config
         database_config = self.get_safe_database_config(config)
         
-        # Prepare context for template rendering
+        # Prepare context for template rendering        
         context = {
             "project": config.get("project_name", "app"),
             "group_id": config.get("base_package", "com.example"),
             "artifact_id": config.get("project_name", "app").lower(),
             "version": config.get("project_version", "0.1.0"),
-            "spring_boot_version": config.get("framework", {}).get("version", "2.7.0"),
+            "framework": config.get("framework", {"name": "spring-boot", "version": "2.7.0"}),
             "java_version": config.get("language", {}).get("version", "11"),
             "description": config.get("description", "Generated Spring Boot application"),
             "database": database_config.get("name", ""),
             "features": config.get("features", []),
         }
-          # Render pom.xml template
-        pom_content = self.render_template("build-systems/maven/pom.xml.j2", context)
+          # Render pom.xml template using Spring Boot specific Maven template
+        pom_content = self.render_template("build-systems/maven/spring-boot/pom.xml.j2", context)
         with open(os.path.join(project_dir, "pom.xml"), "w") as f:
             f.write(pom_content)
     def _generate_gradle_config(self, project_dir: str, config: Dict[str, Any]) -> None:
@@ -75,14 +76,15 @@ class SpringBootJavaGenerator(BaseGenerator):
             "group_id": config.get("base_package", "com.example"),
             "artifact_id": config.get("project_name", "app").lower(),
             "version": config.get("project_version", "0.1.0"),
-            "spring_boot_version": config.get("framework", {}).get("version", "2.7.0"),
+            "framework": config.get("framework", {"name": "spring-boot", "version": "2.7.0"}),
             "java_version": config.get("language", {}).get("version", "11"),
             "description": config.get("description", "Generated Spring Boot application"),
             "database": database_config.get("name", ""),
             "features": config.get("features", []),
         }
-          # Render build.gradle template
-        build_gradle_content = self.render_template("build-systems/gradle/groovy/build.gradle.j2", context)
+        
+        # Render build.gradle template
+        build_gradle_content = self.render_template("build-systems/gradle/groovy/spring-boot/build.gradle.j2", context)
         with open(os.path.join(project_dir, "build.gradle"), "w") as f:
             f.write(build_gradle_content)
         

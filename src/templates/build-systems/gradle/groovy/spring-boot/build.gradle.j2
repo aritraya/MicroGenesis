@@ -1,0 +1,94 @@
+plugins {
+    id 'org.springframework.boot' version '{{ framework.version | default("3.0.0") }}'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'java'
+    id 'jacoco'
+    {% if 'docker' in features %}
+    id 'com.palantir.docker' version '0.25.0'
+    {% endif %}
+}
+
+group = '{{ group_id }}'
+version = '{{ version }}'
+sourceCompatibility = '{{ java_version }}'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    {% if 'data' in features or database %}
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    {% endif %}
+    {% if 'validation' in features %}
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    {% endif %}
+    {% if 'security' in features %}
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    {% endif %}
+    {% if 'actuator' in features %}
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    {% endif %}
+    
+    // Documentation
+    {% if 'swagger' in features %}
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.12'
+    {% endif %}
+
+    // Database
+    {% if database %}
+    {% if database == 'mysql' %}
+    runtimeOnly 'mysql:mysql-connector-java'
+    {% elif database == 'postgresql' %}
+    runtimeOnly 'org.postgresql:postgresql'
+    {% elif database == 'h2' %}
+    runtimeOnly 'com.h2database:h2'
+    {% elif database == 'mongodb' %}
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    {% endif %}
+    {% endif %}
+    
+    // Utilities
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    {% if 'security' in features %}
+    testImplementation 'org.springframework.security:spring-security-test'
+    {% endif %}
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
+    }
+}
+
+{% if 'docker' in features %}
+docker {
+    name "{{ project_name | lower }}:${project.version}"
+    dockerfile file('Dockerfile')
+    files bootJar.archiveFile
+    buildArgs([
+        'JAR_FILE': "${bootJar.archiveFileName.get()}"
+    ])
+}
+{% endif %}
