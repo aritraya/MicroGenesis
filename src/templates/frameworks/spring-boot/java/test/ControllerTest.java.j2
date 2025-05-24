@@ -1,14 +1,13 @@
 package {{ base_package }}.controller;
 
-import {{ base_package }}.entity.SampleEntity;
-import {{ base_package }}.service.SampleEntityService;
-{% if dto_pattern is defined and dto_pattern %}
-import {{ base_package }}.dto.SampleEntityDto;
-import {{ base_package }}.mapper.SampleEntityMapper;
-{% endif %}
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import {{ base_package }}.service.{{ service_name }};
+import {{ base_package }}.dto.*;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;

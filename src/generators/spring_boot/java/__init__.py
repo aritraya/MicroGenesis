@@ -206,7 +206,9 @@ class SpringBootJavaGenerator(BaseGenerator):
         
         # Generate application tests
         app_test_content = self.render_template("frameworks/spring-boot/java/test/ApplicationTests.java.j2", context)
-        with open(os.path.join(src_test_java, f"{context['application_name']}Tests.java"), "w") as f:
+        test_file_path = os.path.join(project_dir, "src", "test", "java", base_package_path, f"{context['application_name']}Tests.java")
+        os.makedirs(os.path.dirname(test_file_path), exist_ok=True)
+        with open(test_file_path, "w") as f:
             f.write(app_test_content)
         
         # Generate test configuration

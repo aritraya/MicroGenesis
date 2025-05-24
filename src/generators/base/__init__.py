@@ -221,7 +221,6 @@ class BaseGenerator(ABC):
         
         with open(os.path.join(project_dir, ".gitlab-ci.yml"), "w") as f:
             f.write(ci_content)
-    
     def _generate_documentation(self, project_dir: str, config: Dict[str, Any]) -> None:
         """Generate project documentation.
         
@@ -230,17 +229,17 @@ class BaseGenerator(ABC):
             config: Project configuration dictionary
         """
         docs_dir = os.path.join(project_dir, "docs")
-        
-        # Generate README
-        template = self.template_env.get_template("README.md.j2")
-        readme_content = template.render(config=config)
+        os.makedirs(docs_dir, exist_ok=True)
+          # Generate README
+        template = self.template_env.get_template("common/docs/README.md.j2")
+        readme_content = template.render(**config)
         
         with open(os.path.join(project_dir, "README.md"), "w") as f:
             f.write(readme_content)
         
         # Generate Getting Started guide
-        template = self.template_env.get_template("GETTING-STARTED.md.j2")
-        getting_started_content = template.render(config=config)
+        template = self.template_env.get_template("common/docs/GETTING-STARTED.md.j2")
+        getting_started_content = template.render(**config)
         
         with open(os.path.join(docs_dir, "GETTING-STARTED.md"), "w") as f:
             f.write(getting_started_content)
